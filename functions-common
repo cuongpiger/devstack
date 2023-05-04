@@ -432,6 +432,8 @@ function GetOSVersion {
         os_PACKAGE="rpm"
     fi
 
+    # set os_VENDOR, os_RELEASE, os_PACKAGE, os_CODENAME as env variables and only-read permissions
+    echo "[DEBUG][functions-common.GetOSVersion] os_VENDOR: $os_VENDOR, os_RELEASE: $os_RELEASE, os_PACKAGE: $os_PACKAGE, os_CODENAME: $os_CODENAME"
     typeset -xr os_VENDOR
     typeset -xr os_RELEASE
     typeset -xr os_PACKAGE
@@ -492,6 +494,7 @@ function GetDistro {
         # DISTRO based on your distros release approach.
         die $LINENO "Unable to determine DISTRO, can not continue."
     fi
+    echo "[DEBUG][functions-common.GetDistro] DISTRO is: $DISTRO"
     typeset -xr DISTRO
 }
 
@@ -1981,6 +1984,8 @@ function disable_negated_services {
     # be removed" list, drop it
     ENABLED_SERVICES=$(remove_disabled_services "$remaining" "$to_remove")
 
+    echo "[DEBUG][functions-common.disable_negated_services] ENABLED_SERVICES=$ENABLED_SERVICES"
+
     $xtrace
 }
 
@@ -2263,6 +2268,7 @@ function export_proxy_variables {
     if isset no_proxy ; then
         export no_proxy=$no_proxy
     fi
+    echo "[DEBUG][functions-common.export_proxy_variables] http_proxy=$http_proxy https_proxy=$https_proxy no_proxy=$no_proxy"
 }
 
 # Returns true if the directory is on a filesystem mounted via NFS.

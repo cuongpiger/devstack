@@ -854,6 +854,8 @@ DevStack Version: ${DEVSTACK_SERIES}
 Change: $(git log --format="%H %s %ci" -1)
 OS Version: ${os_VENDOR} ${os_RELEASE} ${os_CODENAME}
 EOF
+
+echo "[DEBUG][functions.write_devstack_version] DevStack Version: ${DEVSTACK_SERIES}, Change: $(git log --format="%H %s %ci" -1), OS Version: ${os_VENDOR} ${os_RELEASE} ${os_CODENAME}"
 }
 
 # Restore xtrace

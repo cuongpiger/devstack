@@ -201,6 +201,7 @@ function extract_localrc_section {
 
     if [[ -r $configfile ]]; then
         LRC=$(get_meta_section_files $configfile local)
+        echo "[DEBUG][inc.meta-config.extract_localrc_section] LRC is: $LRC"
         for lfile in $LRC; do
             if [[ "$lfile" == "localrc" ]]; then
                 if [[ -r $localrcfile ]]; then
