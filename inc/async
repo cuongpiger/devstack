@@ -221,6 +221,7 @@ function async_init {
 
     # Make sure we have a state directory
     mkdir -p $async_dir
+    echo "[DEBUG][inc.async.async_init] Recreate the async dir: $async_dir"
 }
 
 function async_print_timing {
