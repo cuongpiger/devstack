@@ -117,6 +117,7 @@ function recreate_database {
 
 # Install the database
 function install_database {
+  echo "[DEBUG][lib.database.install_database:$LINENO] DATABASE_TYPE is $DATABASE_TYPE"
   install_database_$DATABASE_TYPE
 }
 

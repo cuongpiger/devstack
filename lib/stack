@@ -18,19 +18,23 @@
 # stack_install_service service
 function stack_install_service {
     local service=$1
+
+    # check this function has been defined
     if type install_${service} >/dev/null 2>&1; then
         # FIXME(dhellmann): Needs to be python3-aware at some point.
         if [[ ${USE_VENV} = True && -n ${PROJECT_VENV[$service]:-} ]]; then
+          echo "[DEBUG][lib.stack.stack_install_service:$LINENO] USE_VENV=${USE_VENV}"
             rm -rf ${PROJECT_VENV[$service]}
             source $TOP_DIR/tools/build_venv.sh ${PROJECT_VENV[$service]} ${ADDITIONAL_VENV_PACKAGES//,/ }
             export PIP_VIRTUAL_ENV=${PROJECT_VENV[$service]:-}
-
-            # Install other OpenStack prereqs that might come from source repos
+#
+             # Install other OpenStack prereqs that might come from source repos
             install_oslo
             install_keystonemiddleware
         fi
         install_${service}
         if [[ ${USE_VENV} = True && -n ${PROJECT_VENV[$service]:-} ]]; then
+            echo "[DEBUG][lib.stack.stack_install_service:$LINENO] PIP_VIRTUAL_ENV = ${PIP_VIRTUAL_ENV}"
             unset PIP_VIRTUAL_ENV
         fi
     else

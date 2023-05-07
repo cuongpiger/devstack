@@ -367,6 +367,7 @@ function _setup_package_with_constraints_edit {
   local project_dir=$1
   local flags=$2
   local extras=$3
+  echo "[DEBUG][inc._setup_package_with_constraints_edit:$LINENO] project_dir: $project_dir, flags: $flags, extras: $extras"
 
   # Normalize the directory name to avoid
   # "installation from path or url cannot be constrained to a version"

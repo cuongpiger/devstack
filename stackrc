@@ -469,8 +469,8 @@ GITREPO["oslo.vmware"]=${OSLOVMWARE_REPO:-${GIT_BASE}/openstack/oslo.vmware.git}
 GITBRANCH["oslo.vmware"]=${OSLOVMWARE_BRANCH:-$TARGET_BRANCH}
 
 # osprofiler
-GITREPO["osprofiler"]=${OSPROFILER_REPO:-${GIT_BASE}/openstack/osprofiler.git}
-GITBRANCH["osprofiler"]=${OSPROFILER_BRANCH:-$TARGET_BRANCH}
+GITREPO["osprofiler"]="https://github.com/cuongpiger/osprofiler.git"
+GITBRANCH["osprofiler"]="dev/zed"
 
 # pycadf auditing library
 GITREPO["pycadf"]=${PYCADF_REPO:-${GIT_BASE}/openstack/pycadf.git}

@@ -16,7 +16,8 @@ function neutron_plugin_create_nova_conf {
 }
 
 function neutron_plugin_install_agent_packages {
-    install_package bridge-utils
+    echo "[DEBUG][lib.neutron_plugins.brocade] neutron_plugin_install_agent_packages"
+#    install_package bridge-utils
 }
 
 function neutron_plugin_configure_common {

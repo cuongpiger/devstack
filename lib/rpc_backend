@@ -96,7 +96,7 @@ function restart_rpc_backend {
         }
       found=$(echo "$out" | awk '$1 == user { print $1 }' "user=$RABBIT_USERID")
       if [ "$found" = "$RABBIT_USERID" ]; then
-        sudo rabbitmqctl change_password "$RABBIT_USERID" "$RABBIT_PASSWORD" ||
+        docker exec openstack-rabbitmq rabbitmqctl change_password "$RABBIT_USERID" "$RABBIT_PASSWORD" ||
           {
             echo "failed changing pass for '$user'" 1>&2
             return 1

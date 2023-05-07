@@ -707,5 +707,68 @@ run_phase stack pre-install
 # NOTE(danms): Set global limits before installing anything
 set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}
 
-install_rpc_backend && \
-restart_rpc_backend``
+install_rpc_backend &&
+  restart_rpc_backend
+
+if is_service_enabled $DATABASE_BACKENDS; then
+  install_database
+fi
+if [ -n "$DATABASE_TYPE" ]; then
+  install_database_python
+fi
+if is_service_enabled neutron; then
+  echo "[DEBUG][stack2:$LINENO] Install neutron agent packages"
+  install_neutron_agent_packages
+fi
+if is_service_enabled etcd3; then
+  echo "[DEBUG][stack2:$LINENO] Install etcd3"
+  install_etcd3
+fi
+
+# Do this early, before any webservers are set up to ensure
+# we don't run into problems with missing certs when apache
+# is restarted.
+if is_service_enabled tls-proxy; then
+  echo "[DEBUG][stack2:$LINENO] Enable TLS Proxy"
+  configure_CA
+  init_CA
+  init_cert
+fi
+
+# Dstat
+# -----
+
+# Install dstat services prerequisites
+install_dstat
+
+echo_summary "Installing OpenStack project source"
+
+# Install additional libraries
+install_libs
+
+# Install uwsgi
+install_apache_uwsgi
+
+# Install client libraries
+install_keystoneauth
+install_keystoneclient
+install_glanceclient
+install_cinderclient
+install_novaclient
+
+if is_service_enabled swift glance horizon; then
+  install_swiftclient
+fi
+if is_service_enabled neutron nova horizon; then
+  install_neutronclient
+fi
+
+# Install middlewarej
+install_keystonemiddleware
+
+if is_service_enabled keystone; then
+    if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
+        stack_install_service keystone
+        configure_keystone
+    fi
+fi
