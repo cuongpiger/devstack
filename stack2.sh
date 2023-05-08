@@ -813,3 +813,9 @@ if is_service_enabled nova; then
   stack_install_service nova
   configure_nova
 fi
+
+if is_service_enabled placement; then
+  # placement api
+  stack_install_service placement
+  configure_placement
+fi
