@@ -1854,6 +1854,7 @@ function run_plugins {
   local plugins="${DEVSTACK_PLUGINS}"
   local plugin
   for plugin in ${plugins//,/ }; do
+    echo "[DEBUG][functions-common.run_plugins:$LINENO] Run plugin $plugin, with the mode $mode and phase $phase"
     local dir=${GITDIR[$plugin]}
     if [[ -f $dir/devstack/plugin.sh ]]; then
       source $dir/devstack/plugin.sh $mode $phase

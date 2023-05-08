@@ -838,3 +838,96 @@ fi
 if is_service_enabled tls-proxy; then
   fix_system_ca_bundle_path
 fi
+
+# Extras Install
+# --------------
+
+# Phase: install, this phase will install OSProfiler, and others...
+run_phase stack install
+
+# Install the OpenStack client, needed for most setup commands
+if use_library_from_git "python-openstackclient"; then
+  git_clone_by_name "python-openstackclient"
+  setup_dev_lib "python-openstackclient"
+else
+  pip_install_gr python-openstackclient
+fi
+
+# Installs alias for osc so that we can collect timing for all
+# osc commands. Alias dies with stack.sh.
+install_oscwrap
+
+# Syslog
+# ------
+
+if [[ $SYSLOG != "False" ]]; then
+  if [[ "$SYSLOG_HOST" = "$HOST_IP" ]]; then
+    # Configure the master host to receive
+    cat <<EOF | sudo tee /etc/rsyslog.d/90-stack-m.conf >/dev/null
+\$ModLoad imrelp
+\$InputRELPServerRun $SYSLOG_PORT
+EOF
+  else
+    # Set rsyslog to send to remote host
+    cat <<EOF | sudo tee /etc/rsyslog.d/90-stack-s.conf >/dev/null
+*.*		:omrelp:$SYSLOG_HOST:$SYSLOG_PORT
+EOF
+  fi
+
+  RSYSLOGCONF="/etc/rsyslog.conf"
+  if [ -f $RSYSLOGCONF ]; then
+    sudo cp -b $RSYSLOGCONF $RSYSLOGCONF.bak
+    if [[ $(grep '$SystemLogRateLimitBurst' $RSYSLOGCONF) ]]; then
+      sudo sed -i 's/$SystemLogRateLimitBurst\ .*/$SystemLogRateLimitBurst\ 0/' $RSYSLOGCONF
+    else
+      sudo sed -i '$ i $SystemLogRateLimitBurst\ 0' $RSYSLOGCONF
+    fi
+    if [[ $(grep '$SystemLogRateLimitInterval' $RSYSLOGCONF) ]]; then
+      sudo sed -i 's/$SystemLogRateLimitInterval\ .*/$SystemLogRateLimitInterval\ 0/' $RSYSLOGCONF
+    else
+      sudo sed -i '$ i $SystemLogRateLimitInterval\ 0' $RSYSLOGCONF
+    fi
+  fi
+
+  echo_summary "Starting rsyslog"
+  restart_service rsyslog
+fi
+
+# Export Certificate Authority Bundle
+# -----------------------------------
+
+# If certificates were used and written to the SSL bundle file then these
+# should be exported so clients can validate their connections.
+
+if [ -f $SSL_BUNDLE_FILE ]; then
+  export OS_CACERT=$SSL_BUNDLE_FILE
+fi
+
+# Configure database
+# ------------------
+
+if is_service_enabled $DATABASE_BACKENDS; then
+  #  configure_database
+  echo "[DEBUG][stack2:$LINENO] Do it myself"
+  configure_database_docker
+fi
+
+# Save configuration values
+save_stackenv $LINENO
+
+# Kernel Samepage Merging (KSM)
+# -----------------------------
+
+# Processes that mark their memory as mergeable can share identical memory
+# pages if KSM is enabled. This is particularly useful for nova + libvirt
+# backends but any other setup that marks its memory as mergeable can take
+# advantage. The drawback is there is higher cpu load; however, we tend to
+# be memory bound not cpu bound so enable KSM by default but allow people
+# to opt out if the CPU time is more important to them.
+
+if [[ $ENABLE_KSM == "True" ]]; then
+  echo "[DEBUG][stack2:$LINENO] Enable KSM"
+#  if [[ -f /sys/kernel/mm/ksm/run ]]; then
+#    sudo sh -c "echo 1 > /sys/kernel/mm/ksm/run"
+#  fi
+fi
