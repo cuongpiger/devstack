@@ -819,3 +819,22 @@ if is_service_enabled placement; then
   stack_install_service placement
   configure_placement
 fi
+
+# create a placement-client fake service to know we need to configure
+# placement connectivity. We configure the placement service for nova
+# if placement-api or placement-client is active, and n-cpu on the
+# same box.
+if is_service_enabled placement placement-client; then
+  if is_service_enabled n-cpu || is_service_enabled n-sch; then
+    configure_placement_nova_compute
+  fi
+fi
+
+if is_service_enabled horizon; then
+  # dashboard
+  stack_install_service horizon
+fi
+
+if is_service_enabled tls-proxy; then
+  fix_system_ca_bundle_path
+fi
