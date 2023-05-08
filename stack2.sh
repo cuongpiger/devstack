@@ -766,9 +766,33 @@ fi
 # Install middlewarej
 install_keystonemiddleware
 
+# Install keystone from source, such as github, and then config the file keystone.conf
+# and apache
 if is_service_enabled keystone; then
-    if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
-        stack_install_service keystone
-        configure_keystone
-    fi
+  if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
+    stack_install_service keystone
+    configure_keystone
+  fi
+fi
+
+if is_service_enabled swift; then
+  echo "[DEBUG][stack2:$LINENO] Enable service swift"
+  if is_service_enabled ceilometer; then
+    install_ceilometermiddleware
+  fi
+  stack_install_service swift
+  configure_swift
+
+  # s3api middleware to provide S3 emulation to Swift
+  if is_service_enabled s3api; then
+    # Replace the nova-objectstore port by the swift port
+    S3_SERVICE_PORT=8080
+  fi
+fi
+
+if is_service_enabled g-api n-api; then
+  echo "[DEBUG][stack2:$LINENO] Enable service g-api n-api"
+  # Image catalog service
+  stack_install_service glance
+#  configure_glance
 fi

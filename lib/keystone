@@ -245,36 +245,39 @@ function configure_keystone {
   setup_logging $KEYSTONE_CONF
 
   iniset $KEYSTONE_CONF DEFAULT debug $ENABLE_DEBUG_LOG_LEVEL
-  #
-  #    if [ "$KEYSTONE_DEPLOY" == "mod_wsgi" ]; then
-  #        iniset $KEYSTONE_CONF DEFAULT logging_exception_prefix "%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s"
-  #        _config_keystone_apache_wsgi
-  #    else # uwsgi
-  #        write_uwsgi_config "$KEYSTONE_PUBLIC_UWSGI_CONF" "$KEYSTONE_PUBLIC_UWSGI" "/identity"
-  #    fi
-  #
-  #    iniset $KEYSTONE_CONF DEFAULT max_token_size 16384
-  #
-  #    iniset $KEYSTONE_CONF fernet_tokens key_repository "$KEYSTONE_CONF_DIR/fernet-keys/"
-  #
-  #    iniset $KEYSTONE_CONF credential key_repository "$KEYSTONE_CONF_DIR/credential-keys/"
-  #
-  #    # Configure the project created by the 'keystone-manage bootstrap' as the cloud-admin project.
-  #    # The users from this project are globally admin as before, but it also
-  #    # allows policy changes in order to clarify the adminess scope.
-  #    #iniset $KEYSTONE_CONF resource admin_project_domain_name Default
-  #    #iniset $KEYSTONE_CONF resource admin_project_name admin
-  #
-  #    if [[ "$KEYSTONE_SECURITY_COMPLIANCE_ENABLED" = True ]]; then
-  #        iniset $KEYSTONE_CONF security_compliance lockout_failure_attempts $KEYSTONE_LOCKOUT_FAILURE_ATTEMPTS
-  #        iniset $KEYSTONE_CONF security_compliance lockout_duration $KEYSTONE_LOCKOUT_DURATION
-  #        iniset $KEYSTONE_CONF security_compliance unique_last_password_count $KEYSTONE_UNIQUE_LAST_PASSWORD_COUNT
-  #    fi
-  #    if [[ "$KEYSTONE_ENFORCE_SCOPE" == True || "$ENFORCE_SCOPE" == True ]] ; then
-  #        iniset $KEYSTONE_CONF oslo_policy enforce_scope true
-  #        iniset $KEYSTONE_CONF oslo_policy enforce_new_defaults true
-  #        iniset $KEYSTONE_CONF oslo_policy policy_file policy.yaml
-  #    fi
+
+  echo "[DEBUG][lib.keystone.configure_keystone:$LINENO] KEYSTONE_DEPLOY = $KEYSTONE_DEPLOY"
+  if [ "$KEYSTONE_DEPLOY" == "mod_wsgi" ]; then
+    iniset $KEYSTONE_CONF DEFAULT logging_exception_prefix "%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s.%(funcName)s:%(lineno)s %(instance)s"
+    _config_keystone_apache_wsgi
+  else # uwsgi
+    # the two parameters below are keystone-uwsgi-public.ini and keystone-wsgi-public
+    echo "[DEBUG][lib.keystone.configure_keystone] KEYSTONE_PUBLIC_UWSGI_CONF = $KEYSTONE_PUBLIC_UWSGI_CONF, KEYSTONE_PUBLIC_UWSGI = $KEYSTONE_PUBLIC_UWSGI"
+    write_uwsgi_config "$KEYSTONE_PUBLIC_UWSGI_CONF" "$KEYSTONE_PUBLIC_UWSGI" "/identity"
+  fi
+
+  iniset $KEYSTONE_CONF DEFAULT max_token_size 16384
+
+  iniset $KEYSTONE_CONF fernet_tokens key_repository "$KEYSTONE_CONF_DIR/fernet-keys/"
+
+  iniset $KEYSTONE_CONF credential key_repository "$KEYSTONE_CONF_DIR/credential-keys/"
+
+  # Configure the project created by the 'keystone-manage bootstrap' as the cloud-admin project.
+  # The users from this project are globally admin as before, but it also
+  # allows policy changes in order to clarify the adminess scope.
+  iniset $KEYSTONE_CONF resource admin_project_domain_name Default
+  iniset $KEYSTONE_CONF resource admin_project_name admin
+
+  if [[ "$KEYSTONE_SECURITY_COMPLIANCE_ENABLED" = True ]]; then
+    iniset $KEYSTONE_CONF security_compliance lockout_failure_attempts $KEYSTONE_LOCKOUT_FAILURE_ATTEMPTS
+    iniset $KEYSTONE_CONF security_compliance lockout_duration $KEYSTONE_LOCKOUT_DURATION
+    iniset $KEYSTONE_CONF security_compliance unique_last_password_count $KEYSTONE_UNIQUE_LAST_PASSWORD_COUNT
+  fi
+  if [[ "$KEYSTONE_ENFORCE_SCOPE" == True || "$ENFORCE_SCOPE" == True ]]; then
+    iniset $KEYSTONE_CONF oslo_policy enforce_scope true
+    iniset $KEYSTONE_CONF oslo_policy enforce_new_defaults true
+    iniset $KEYSTONE_CONF oslo_policy policy_file policy.yaml
+  fi
 }
 
 # create_keystone_accounts() - Sets up common required keystone accounts
