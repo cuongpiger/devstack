@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9e6e0b1b-5d15-4c28-9a2c-14db1ad84b04" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/stack2.sh" beforeDir="false" afterPath="$PROJECT_DIR$/stack2.sh" afterDir="false" />
-    </list>
+    <list default="true" id="9e6e0b1b-5d15-4c28-9a2c-14db1ad84b04" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -14,6 +12,31 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitToolBoxStore">
+    <option name="recentBranches">
+      <RecentBranches>
+        <option name="branchesForRepo">
+          <list>
+            <RecentBranchesForRepo>
+              <option name="branches">
+                <list>
+                  <RecentBranch>
+                    <option name="branchName" value="master" />
+                    <option name="lastUsedInstant" value="1683605954" />
+                  </RecentBranch>
+                  <RecentBranch>
+                    <option name="branchName" value="dev/zed" />
+                    <option name="lastUsedInstant" value="1683605953" />
+                  </RecentBranch>
+                </list>
+              </option>
+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+            </RecentBranchesForRepo>
+          </list>
+        </option>
+      </RecentBranches>
+    </option>
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/local.conf" root0="SKIP_HIGHLIGHTING" />
@@ -62,7 +85,7 @@
       <workItem from="1683538490222" duration="689000" />
       <workItem from="1683544239046" duration="321000" />
       <workItem from="1683596558005" duration="67000" />
-      <workItem from="1683600242490" duration="3343000" />
+      <workItem from="1683600242490" duration="3756000" />
     </task>
     <servers />
   </component>
