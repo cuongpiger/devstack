@@ -931,3 +931,35 @@ if [[ $ENABLE_KSM == "True" ]]; then
 #    sudo sh -c "echo 1 > /sys/kernel/mm/ksm/run"
 #  fi
 fi
+
+# Write a clouds.yaml file and use the devstack-admin cloud
+write_clouds_yaml
+export OS_CLOUD=${OS_CLOUD:-devstack-admin}
+
+if is_service_enabled keystone; then
+  echo_summary "Starting Keystone"
+
+  if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
+    init_keystone
+    start_keystone
+    bootstrap_keystone
+  fi
+
+  create_keystone_accounts
+  if is_service_enabled nova; then
+    async_runfunc create_nova_accounts
+  fi
+  if is_service_enabled glance; then
+    async_runfunc create_glance_accounts
+  fi
+  if is_service_enabled cinder; then
+    async_runfunc create_cinder_accounts
+  fi
+  if is_service_enabled neutron; then
+    async_runfunc create_neutron_accounts
+  fi
+  if is_service_enabled swift; then
+    async_runfunc create_swift_accounts
+  fi
+
+fi
