@@ -65,17 +65,17 @@ if ! isset ENABLED_SERVICES ; then
     # Keystone - nothing works without keystone
     ENABLED_SERVICES=key
     # Nova - services to support libvirt based openstack clouds
-    ENABLED_SERVICES+=,n-api,n-cpu,n-cond,n-sch,n-novnc,n-api-meta
+#    ENABLED_SERVICES+=,n-api,n-cpu,n-cond,n-sch,n-novnc,n-api-meta
     # Placement service needed for Nova
-    ENABLED_SERVICES+=,placement-api,placement-client
+#    ENABLED_SERVICES+=,placement-api,placement-client
     # Glance services needed for Nova
-    ENABLED_SERVICES+=,g-api
+#    ENABLED_SERVICES+=,g-api
     # Cinder
-    ENABLED_SERVICES+=,c-sch,c-api,c-vol
+#    ENABLED_SERVICES+=,c-sch,c-api,c-vol
     # OVN
-    ENABLED_SERVICES+=,ovn-controller,ovn-northd,ovs-vswitchd,ovsdb-server
+#    ENABLED_SERVICES+=,ovn-controller,ovn-northd,ovs-vswitchd,ovsdb-server
     # Neutron
-    ENABLED_SERVICES+=,q-svc,q-ovn-metadata-agent
+#    ENABLED_SERVICES+=,q-svc,q-ovn-metadata-agent
     # Dashboard
     ENABLED_SERVICES+=,horizon
     # Additional services
@@ -265,8 +265,8 @@ GLANCE_REPO=${GLANCE_REPO:-${GIT_BASE}/openstack/glance.git}
 GLANCE_BRANCH=${GLANCE_BRANCH:-$TARGET_BRANCH}
 
 # django powered web control panel for openstack
-HORIZON_REPO=${HORIZON_REPO:-${GIT_BASE}/openstack/horizon.git}
-HORIZON_BRANCH=${HORIZON_BRANCH:-$TARGET_BRANCH}
+HORIZON_REPO="https://github.com/cuongpiger/horizon.git"
+HORIZON_BRANCH="dev/zed"
 
 # unified auth system (manages accounts/tokens)
 KEYSTONE_REPO="https://github.com/cuongpiger/keystone.git"
