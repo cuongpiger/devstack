@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9e6e0b1b-5d15-4c28-9a2c-14db1ad84b04" name="Changes" comment="" />
+    <list default="true" id="9e6e0b1b-5d15-4c28-9a2c-14db1ad84b04" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/installation-logs/env_01" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/local.conf" beforeDir="false" afterPath="$PROJECT_DIR$/local.conf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stackrc" beforeDir="false" afterPath="$PROJECT_DIR$/stackrc" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -39,6 +44,7 @@
     </option>
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/installation-logs/log_01" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/local.conf" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -87,6 +93,7 @@
       <workItem from="1683596558005" duration="67000" />
       <workItem from="1683600242490" duration="3756000" />
       <workItem from="1683606111716" duration="2328000" />
+      <workItem from="1683615131684" duration="9268000" />
     </task>
     <servers />
   </component>

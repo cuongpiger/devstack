@@ -1,0 +1,73 @@
+DEST = /opt/stack
+RC_DIR = /opt/stack/devstack
+DATA_DIR = /opt/stack/data
+SERVICE_DIR = /opt/stack/status
+HORIZON_APACHE_ROOT = /dashboard
+SYSTEMD_DIR = /etc/systemd/system
+SYSTEMCTL = sudo systemctl
+ENABLE_KSM = True
+VIRTUALENV_CMD = python3 -m venv
+LOG_COLOR = True
+IDENTITY_API_VERSION = 3
+ENFORCE_SCOPE = False
+DATABASE_QUERY_LOGGING = False
+MYSQL_GATHER_PERFORMANCE = True
+MYSQL_REDUCE_MEMORY = False
+WSGI_MODE = uwsgi
+REQUIREMENTS_DIR = /opt/stack/requirements
+DEVSTACK_SERIES = 2023.2
+ENABLE_VOLUME_MULTIATTACH = False
+DEFAULT_VIRT_DRIVER = libvirt
+VIRT_DRIVER = libvirt
+LIBVIRT_TYPE = kvm
+LIBVIRT_CPU_MODE = custom
+LIBVIRT_CPU_MODEL = Nehalem
+LIBVIRT_GROUP = libvirt
+CIRROS_VERSION = 0.5.2
+CIRROS_ARCH = x86_64
+DOWNLOAD_DEFAULT_IMAGES = True
+DEFAULT_IMAGE_NAME = cirros-0.5.2-x86_64-disk
+DEFAULT_IMAGE_FILE_NAME = cirros-0.5.2-x86_64-disk.img
+IMAGE_URLS = http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img
+DOWNLOAD_DEFAULT_IMAGES = False
+ETCD_VERSION = v3.3.12
+ETCD_SHA256_AMD64=dc5d82df095dae0a2970e4d870b6929590689dd707ae3d33e7b86da0f7f211b6
+ETCD_SHA256_ARM64=170b848ac1a071fe7d495d404a868a2c0090750b2944f8a260ef1c6125b2b4f4
+ETCD_SHA256_PPC64=77f807b1b51abbf51e020bb05bdb8ce088cb58260fcd22749ea32eee710463d3
+MEMCACHE_SERVERS=localhost:11211
+RECREATE_KEYSTONE_DB=True
+LOGDIR=/opt/stack/logs
+TEMPFIL=/tmp/tmp.2eog06ubwcE
+async_dir=/opt/stack/async
+LOCAL_HOSTNAME=anas
+SKIP_EPEL_INSTALL=False
+PYTHON=/usr/bin/python3.8
+VERBOSE=True
+VERBOSE_NO_TIMESTAMP=True
+TIMESTAMP_FORMAT=%F-%H%M%S
+LOGDAYS=7
+DATABASE_TYPE=mysql
+MYSQL_USER=root
+DATABASE_USER=root
+BASE_SQL_CONN=mysql+pymysql://root:secret@127.0.0.1
+KEYSTONE_SERVICE_URI=http://10.0.2.15/identity
+
+                                                                        source /opt/stack/devstack/tools/install_prereqs.sh
+
+
+PIP_VIRTUAL_ENV=/opt/stack/requirements/.venv
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
