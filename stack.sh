@@ -242,26 +242,26 @@ fi
 # --------------
 
 # Make sure the proxy config is visible to sub-processes
-export_proxy_variables
+export_proxy_variables  # NOTE (cuongdm3): in this version, this function will be ignored
 
 # Remove services which were negated in ``ENABLED_SERVICES``
 # using the "-" prefix (e.g., "-rabbit") instead of
 # calling disable_service().
-disable_negated_services
+disable_negated_services  # NOTE (cuongdm3): in this version, this function will be ignored
 
 
 # Configure sudo
 # --------------
 
 # We're not as **root** so make sure ``sudo`` is available
-is_package_installed sudo || is_package_installed sudo-ldap || install_package sudo
+is_package_installed sudo || is_package_installed sudo-ldap || install_package sudo  # NOTE (cuongdm3): the first option is executed, the rest is ignored
 
 # UEC images ``/etc/sudoers`` does not have a ``#includedir``, add one
 sudo grep -q "^#includedir.*/etc/sudoers.d" /etc/sudoers ||
     echo "#includedir /etc/sudoers.d" | sudo tee -a /etc/sudoers
 
 # Conditionally setup detailed logging for sudo
-if [[ -n "$LOG_SUDO" ]]; then
+if [[ -n "$LOG_SUDO" ]]; then  # NOTE (cuongdm3): this scope is ignored
     TEMPFILE=`mktemp`
     echo "Defaults log_output" > $TEMPFILE
     chmod 0440 $TEMPFILE
@@ -321,24 +321,24 @@ function _install_rdo {
 # ----------------------------
 
 # Destination path for installation ``DEST``
-DEST=${DEST:-/opt/stack}
+DEST=${DEST:-/opt/stack}  # NOTE (cuongdm3): DEST will be /opt/stack
 
 # Create the destination directory and ensure it is writable by the user
 # and read/executable by everybody for daemons (e.g. apache run for horizon)
 # If directory exists do not modify the permissions.
-if [[ ! -d $DEST ]]; then
+if [[ ! -d $DEST ]]; then  # NOTE (cuongdm3): this scope is ignored
     sudo mkdir -p $DEST
     safe_chown -R $STACK_USER $DEST
     safe_chmod 0755 $DEST
 fi
 
 # Destination path for devstack logs
-if [[ -n ${LOGDIR:-} ]]; then
+if [[ -n ${LOGDIR:-} ]]; then  # NOTE (cuongdm3): this scope is executed
     mkdir -p $LOGDIR
 fi
 
 # Destination path for service data
-DATA_DIR=${DATA_DIR:-${DEST}/data}
+DATA_DIR=${DATA_DIR:-${DEST}/data}  # NOTE (cuongdm3): DATA_DIR will be /opt/stack/data
 if [[ ! -d $DATA_DIR ]]; then
     sudo mkdir -p $DATA_DIR
     safe_chown -R $STACK_USER $DATA_DIR
@@ -346,22 +346,22 @@ if [[ ! -d $DATA_DIR ]]; then
 fi
 
 # Create and/or clean the async state directory
-async_init
+async_init  # NOTE (cuongdm3): create the directory /opt/stack/async
 
 # Configure proper hostname
 # Certain services such as rabbitmq require that the local hostname resolves
 # correctly.  Make sure it exists in /etc/hosts so that is always true.
-LOCAL_HOSTNAME=`hostname -s`
-if ! fgrep -qwe "$LOCAL_HOSTNAME" /etc/hosts; then
+LOCAL_HOSTNAME=`hostname -s`  # NOTE (cuongdm3): LOCAL_HOSTNAME will be anas
+if ! fgrep -qwe "$LOCAL_HOSTNAME" /etc/hosts; then  # NOTE (cuongdm3): this scope is ignored
     sudo sed -i "s/\(^127.0.0.1.*\)/\1 $LOCAL_HOSTNAME/" /etc/hosts
 fi
 
 # If you have all the repos installed above already setup (e.g. a CI
 # situation where they are on your image) you may choose to skip this
 # to speed things up
-SKIP_EPEL_INSTALL=$(trueorfalse False SKIP_EPEL_INSTALL)
+SKIP_EPEL_INSTALL=$(trueorfalse False SKIP_EPEL_INSTALL)  # NOTE (cuongdm3): is set to False
 
-if [[ $DISTRO == "rhel8" ]]; then
+if [[ $DISTRO == "rhel8" ]]; then  # NOTE (cuongdm3): this condition scope is ignored
     # If we have /etc/ci/mirror_info.sh assume we're on a OpenStack CI
     # node, where EPEL is installed (but disabled) and already
     # pointing at our internal mirror
@@ -421,8 +421,8 @@ install_python
 # -----------------
 
 # Set up logging level
-VERBOSE=$(trueorfalse True VERBOSE)
-VERBOSE_NO_TIMESTAMP=$(trueorfalse False VERBOSE)
+VERBOSE=$(trueorfalse True VERBOSE)  # NOTE (cuongdm3): VERBOSE is set to True
+VERBOSE_NO_TIMESTAMP=$(trueorfalse False VERBOSE)  # NOTE (cuongdm3): VERBOSE_NO_TIMESTAMP is set to True
 
 # Draw a spinner so the user knows something is happening
 function spinner {
@@ -472,7 +472,7 @@ TIMESTAMP_FORMAT=${TIMESTAMP_FORMAT:-"%F-%H%M%S"}
 LOGDAYS=${LOGDAYS:-7}
 CURRENT_LOG_TIME=$(date "+$TIMESTAMP_FORMAT")
 
-if [[ -n "$LOGFILE" ]]; then
+if [[ -n "$LOGFILE" ]]; then  # NOTE (cuongdm3): this condition scope is ignored
     # Clean up old log files.  Append '.*' to the user-specified
     # ``LOGFILE`` to match the date in the search template.
     LOGFILE_DIR="${LOGFILE%/*}"           # dirname
@@ -587,7 +587,7 @@ set -o errexit
 uname -a
 
 # Reset the bundle of CA certificates
-SSL_BUNDLE_FILE="$DATA_DIR/ca-bundle.pem"
+SSL_BUNDLE_FILE="$DATA_DIR/ca-bundle.pem"  # NOTE (cuongdm3): it will be set to /opt/stack/data/ca-bundle.pem
 rm -f $SSL_BUNDLE_FILE
 
 # Import common services (database, message queue) configuration
@@ -598,7 +598,7 @@ source $TOP_DIR/lib/rpc_backend
 # ==================
 
 # Clone all external plugins
-fetch_plugins
+fetch_plugins  # NOTE (cuongdm3): the osprofiler will be read here
 
 # Plugin Phase 0: override_defaults - allow plugins to override
 # defaults before other services are run
@@ -704,12 +704,12 @@ function read_password {
 # ``lib/database`` is sourced. ``mysql`` is the default.
 
 if initialize_database_backends; then
-    echo "Using $DATABASE_TYPE database backend"
+    echo "Using $DATABASE_TYPE database backend"  # NOTE (cuongdm3): DATABASE_TYPE=mysql
     # Last chance for the database password. This must be handled here
     # because read_password is not a library function.
     read_password DATABASE_PASSWORD "ENTER A PASSWORD TO USE FOR THE DATABASE."
 
-    define_database_baseurl
+    define_database_baseurl  # NOTE (cuongdm3): this line is executed
 else
     echo "No database enabled"
 fi
@@ -778,12 +778,12 @@ save_stackenv $LINENO
 # attempt to apply any constraints to pip installs.
 # We always need the master branch in addition to any stable branch, so
 # override GIT_DEPTH here.
-GIT_DEPTH=0 git_clone $REQUIREMENTS_REPO $REQUIREMENTS_DIR $REQUIREMENTS_BRANCH
+GIT_DEPTH=0 git_clone $REQUIREMENTS_REPO $REQUIREMENTS_DIR $REQUIREMENTS_BRANCH  # NOTE (cuongdm3): clone the requirements repo
 
 # Install package requirements
 # Source it so the entire environment is available
 echo_summary "Installing package prerequisites"
-source $TOP_DIR/tools/install_prereqs.sh
+source $TOP_DIR/tools/install_prereqs.sh # NOTE (cuongdm3): source file install_prereqs.sh inside devstack/tools directory
 
 # Configure an appropriate Python environment.
 #
@@ -798,16 +798,16 @@ source $TOP_DIR/tools/install_prereqs.sh
 # pip are less and less common, with virtualenv's being the general
 # approach now; there are a lot of devstack plugins that assume a
 # global install environment.
-if [[ "$OFFLINE" != "True" ]]; then
-    PYPI_ALTERNATIVE_URL=${PYPI_ALTERNATIVE_URL:-""} $TOP_DIR/tools/install_pip.sh
+if [[ "$OFFLINE" != "True" ]]; then  # NOTE (cuongdm3): OFFLINE is not set, run inside the scope
+    PYPI_ALTERNATIVE_URL=${PYPI_ALTERNATIVE_URL:-""} $TOP_DIR/tools/install_pip.sh  # NOTE (cuongdm3): PYPI_ALTERNATIVE_URL is not set, the file install_pip.sh to install pip command
 fi
 
 # Do the ugly hacks for broken packages and distros
 source $TOP_DIR/tools/fixup_stuff.sh
-fixup_all
+fixup_all  # NOTE (cuongdm3): this line remove the egg.info directory
 
 # Install subunit for the subunit output stream
-pip_install -U os-testr
+pip_install -U os-testr  # NOTE (cuongdm3): install os-testr package using pip command
 
 # the default rate limit of 1000 messages / 30 seconds is not
 # sufficient given how verbose our logging is.
@@ -821,14 +821,14 @@ sudo systemctl restart systemd-journald
 install_infra
 
 # Install bindep
-$VIRTUALENV_CMD $DEST/bindep-venv
+$VIRTUALENV_CMD $DEST/bindep-venv  # NOTE (cuongdm3): create virtual env at /opt/stack/bindep-venv
 # TODO(ianw) : optionally install from zuul checkout?
-$DEST/bindep-venv/bin/pip install bindep
-export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep
+$DEST/bindep-venv/bin/pip install bindep  # NOTE (cuongdm3): install bindep package using pip command inside bindep-venv virtual env
+export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep  # NOTE (cuongdm3): export BINDEP_CMD, it will be /opt/stack/bindep-venv/bin/bindep
 
 # Install packages as defined in plugin bindep.txt files
-pkgs="$( _get_plugin_bindep_packages )"
-if [[ -n "${pkgs}" ]]; then
+pkgs="$( _get_plugin_bindep_packages )"  # NOTE (cuongdm3): in my case, pkgs is empty
+if [[ -n "${pkgs}" ]]; then  # NOTE (cuongdm3): this line is not run
     install_package ${pkgs}
 fi
 
@@ -838,23 +838,23 @@ fi
 run_phase stack pre-install
 
 # NOTE(danms): Set global limits before installing anything
-set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}
+set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}  # NOTE (cuongdm3): set DefaultLimitNOFILE to 2048
 
-install_rpc_backend
-restart_rpc_backend
+install_rpc_backend  # NOTE (cuongdm3): install rabbitmq server
+restart_rpc_backend  # NOTE (cuongdm3): restart rabbitmq server
 
 if is_service_enabled $DATABASE_BACKENDS; then
-    install_database
+    install_database  # NOTE (cuongdm3): install mysql server
 fi
 if [ -n "$DATABASE_TYPE" ]; then
-    install_database_python
+    install_database_python  # NOTE (cuongdm3): install pymysql package pip on the host machine
 fi
 
-if is_service_enabled neutron; then
+if is_service_enabled neutron; then  # NOTE (cuongdm3): skip this in my scenario
     install_neutron_agent_packages
 fi
 
-if is_service_enabled etcd3; then
+if is_service_enabled etcd3; then  # NOTE (cuongdm3): install etcd3 server
     install_etcd3
 fi
 
@@ -864,7 +864,7 @@ fi
 # Do this early, before any webservers are set up to ensure
 # we don't run into problems with missing certs when apache
 # is restarted.
-if is_service_enabled tls-proxy; then
+if is_service_enabled tls-proxy; then  # NOTE (cuongdm3): skip this in my scenario
     configure_CA
     init_CA
     init_cert
@@ -874,7 +874,7 @@ fi
 # -----
 
 # Install dstat services prerequisites
-install_dstat
+install_dstat  # NOTE (cuongdm3): install dstat package using pip command, but skip this in my scenario
 
 
 # Check Out and Install Source
@@ -886,32 +886,32 @@ echo_summary "Installing OpenStack project source"
 install_libs
 
 # Install uwsgi
-install_apache_uwsgi
+install_apache_uwsgi  # NOTE (cuongdm3): using apt to install these package: uwsgi uwsgi-plugin-python3 libapache2-mod-proxy-uwsgi
 
 # Install client libraries
-install_keystoneauth
-install_keystoneclient
-install_glanceclient
-install_cinderclient
-install_novaclient
+install_keystoneauth  # NOTE (cuongdm3): install this
+install_keystoneclient  # NOTE (cuongdm3): install this
+install_glanceclient  # NOTE (cuongdm3): install this
+install_cinderclient  # NOTE (cuongdm3): install this
+install_novaclient  # NOTE (cuongdm3): install this
 if is_service_enabled swift glance horizon; then
-    install_swiftclient
+    install_swiftclient  # NOTE (cuongdm3): install python-swiftclient package using pip command
 fi
 if is_service_enabled neutron nova horizon; then
-    install_neutronclient
+    install_neutronclient  # NOTE (cuongdm3): install python-neutronclient package using pip command
 fi
 
 # Install middleware
-install_keystonemiddleware
+install_keystonemiddleware  # NOTE (cuongdm3): install keystonemiddleware and python-memcached package using pip command on the host machine
 
 if is_service_enabled keystone; then
     if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
-        stack_install_service keystone
-        configure_keystone
+        stack_install_service keystone  # NOTE (cuongdm3): this scope is executed, install on the host machine
+        configure_keystone  # set keystone.conf file
     fi
 fi
 
-if is_service_enabled swift; then
+if is_service_enabled swift; then  # NOTE (cuongdm3): do not run this
     if is_service_enabled ceilometer; then
         install_ceilometermiddleware
     fi
@@ -925,30 +925,30 @@ if is_service_enabled swift; then
     fi
 fi
 
-if is_service_enabled g-api n-api; then
+if is_service_enabled g-api n-api; then  # NOTE (cuongdm3): do not run this
     # Image catalog service
     stack_install_service glance
     configure_glance
 fi
 
-if is_service_enabled cinder; then
+if is_service_enabled cinder; then  # NOTE (cuongdm3): do not run this
     # Block volume service
     stack_install_service cinder
     configure_cinder
 fi
 
-if is_service_enabled neutron; then
+if is_service_enabled neutron; then  # NOTE (cuongdm3): do not run this
     # Network service
     stack_install_service neutron
 fi
 
-if is_service_enabled nova; then
+if is_service_enabled nova; then  # NOTE (cuongdm3): do not run this
     # Compute service
     stack_install_service nova
     configure_nova
 fi
 
-if is_service_enabled placement; then
+if is_service_enabled placement; then  # NOTE (cuongdm3): do not run this
     # placement api
     stack_install_service placement
     configure_placement
@@ -958,7 +958,7 @@ fi
 # placement connectivity. We configure the placement service for nova
 # if placement-api or placement-client is active, and n-cpu on the
 # same box.
-if is_service_enabled placement placement-client; then
+if is_service_enabled placement placement-client; then  # NOTE (cuongdm3): do not run this
     if is_service_enabled n-cpu || is_service_enabled n-sch; then
         configure_placement_nova_compute
     fi

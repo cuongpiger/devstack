@@ -594,10 +594,10 @@ function check_path_perm_sanity {
     # the stack user's homedir.
 
     local real_path
-    real_path=$(readlink -f $1)
+    real_path=$(readlink -f $1)  # NOTE (cuongdm3): this will be set to /opt/stack
     local rebuilt_path=""
-    for i in $(echo ${real_path} | tr "/" " "); do
-        rebuilt_path=$rebuilt_path"/"$i
+    for i in $(echo ${real_path} | tr "/" " "); do  # NOTE (cuongdm3): this scope is ignored
+        rebuilt_path=$rebuilt_path"/"$i  # NOTE (cuongdm3): also is /opt/stack
 
         if [[ $(stat -c '%a' ${rebuilt_path}) = 700 ]]; then
             echo "*** DEST path element"

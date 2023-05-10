@@ -236,12 +236,12 @@ function restart_apache_server {
 }
 
 function write_uwsgi_config {
-    local file=$1
-    local wsgi=$2
-    local url=$3
+    local file=$1  # it will be /etc/keystone/keystone-uwsgi-public.ini (keystone)
+    local wsgi=$2  # it will be /usr/local/bin/keystone-wsgi-public (keystone)
+    local url=$3  # it will be /identity (keystone)
     local http=$4
     local name=""
-    name=$(basename $wsgi)
+    name=$(basename $wsgi)  # it will be keystone-wsgi-public (keystone)
 
     # create a home for the sockets; note don't use /tmp -- apache has
     # a private view of it on some platforms.

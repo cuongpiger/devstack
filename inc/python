@@ -378,7 +378,7 @@ function _setup_package_with_constraints_edit {
         local name
         name=$(awk '/^name.*=/ {print $3}' $project_dir/setup.cfg)
         $REQUIREMENTS_DIR/.venv/bin/edit-constraints \
-            $REQUIREMENTS_DIR/upper-constraints.txt -- $name
+            $REQUIREMENTS_DIR/upper-constraints.txt -- $name  # NOTE (cuongdm3): remove package $name out of the file upper-constraints.txt
     fi
 
     setup_package $bindep $project_dir "$flags" $extras

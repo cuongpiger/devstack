@@ -1738,7 +1738,7 @@ function fetch_plugins {
         return
     fi
 
-    echo "Fetching DevStack plugins"
+    echo "Fetching DevStack plugins"  # NOTE (cuongdm3): osprofiler will be cloned into /opt/stack/osprofiler directory
     for plugin in ${plugins//,/ }; do
         git_clone_by_name $plugin
     done

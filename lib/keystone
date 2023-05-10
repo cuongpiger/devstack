@@ -245,7 +245,7 @@ function configure_keystone {
         iniset $KEYSTONE_CONF DEFAULT logging_exception_prefix "%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s"
         _config_keystone_apache_wsgi
     else # uwsgi
-        write_uwsgi_config "$KEYSTONE_PUBLIC_UWSGI_CONF" "$KEYSTONE_PUBLIC_UWSGI" "/identity"
+        write_uwsgi_config "$KEYSTONE_PUBLIC_UWSGI_CONF" "$KEYSTONE_PUBLIC_UWSGI" "/identity"  # NOTE (cuongdm3): set for uwsgi, run this, this will create the file /etc/keystone/keystone-public-uwsgi.ini and /usr/local/bin/keystone-public-uwsgi with url is /identity
     fi
 
     iniset $KEYSTONE_CONF DEFAULT max_token_size 16384

@@ -136,8 +136,8 @@ function install_libs {
     #
     # NOTE(sdague): this is currently a work around because tooz
     # doesn't pull in etcd3.
-    pip_install etcd3
-    pip_install etcd3gw
+    pip_install etcd3  # NOTE (cuongdm3): install etcd3 on host machine
+    pip_install etcd3gw  # NOTE (cuongdm3): install etcd3gw on host machine
 }
 
 # Restore xtrace
