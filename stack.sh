@@ -842,13 +842,13 @@ set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}  # NOTE (cuongdm3): set
 
 install_rpc_backend  # NOTE (cuongdm3): install rabbitmq server
 restart_rpc_backend  # NOTE (cuongdm3): restart rabbitmq server
-#
-#if is_service_enabled $DATABASE_BACKENDS; then
-#    install_database  # NOTE (cuongdm3): install mysql server
-#fi
-#if [ -n "$DATABASE_TYPE" ]; then
-#    install_database_python  # NOTE (cuongdm3): install pymysql package pip on the host machine
-#fi
+
+if is_service_enabled $DATABASE_BACKENDS; then
+    install_database  # NOTE (cuongdm3): install mysql server
+fi
+if [ -n "$DATABASE_TYPE" ]; then
+    install_database_python  # NOTE (cuongdm3): install pymysql package pip on the host machine
+fi
 #
 #if is_service_enabled neutron; then  # NOTE (cuongdm3): skip this in my scenario
 #    install_neutron_agent_packages

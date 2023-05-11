@@ -117,7 +117,11 @@ function recreate_database {
 
 # Install the database
 function install_database {
-  install_database_$DATABASE_TYPE
+  if [[ "$THIRD_SERVICES_IN_DOCKER" == "True" ]]; then
+    install_database_mysql_docker
+  else
+    install_database_$DATABASE_TYPE
+  fi
 }
 
 # Install the database Python packages

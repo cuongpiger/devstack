@@ -84,7 +84,7 @@ function restart_rpc_backend {
     # (May 2015)
     # TODO(tonyb): Remove this when Debian and Ubuntu have a fixed systemd
     # service file.
-    if [[ "$CONDA_ENABLED" == "True" ]]; then
+    if [[ "$THIRD_SERVICES_IN_DOCKER" == "True" ]]; then
       if [ "$(docker ps -aqf "name=openstack-rabbitmq" 2>/dev/null)" ]; then
         out=$(docker exec openstack-rabbitmq rabbitmqctl list_users) ||
           {
