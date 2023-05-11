@@ -713,78 +713,78 @@ if initialize_database_backends; then
 else
     echo "No database enabled"
 fi
-#
-#
-## Queue Configuration
-## -------------------
-#
-## Rabbit connection info
-## In multi node DevStack, second node needs ``RABBIT_USERID``, but rabbit
-## isn't enabled.
-#if is_service_enabled rabbit; then
-#    read_password RABBIT_PASSWORD "ENTER A PASSWORD TO USE FOR RABBIT."
-#fi
-#
-#
-## Keystone
-## --------
-#
-#if is_service_enabled keystone; then
-#    # Services authenticate to Identity with servicename/``SERVICE_PASSWORD``
-#    read_password SERVICE_PASSWORD "ENTER A SERVICE_PASSWORD TO USE FOR THE SERVICE AUTHENTICATION."
-#    # Horizon currently truncates usernames and passwords at 20 characters
-#    read_password ADMIN_PASSWORD "ENTER A PASSWORD TO USE FOR HORIZON AND KEYSTONE (20 CHARS OR LESS)."
-#
-#    # Keystone can now optionally install OpenLDAP by enabling the ``ldap``
-#    # service in ``local.conf`` (e.g. ``enable_service ldap``).
-#    # To clean out the Keystone contents in OpenLDAP set ``KEYSTONE_CLEAR_LDAP``
-#    # to ``yes`` (e.g. ``KEYSTONE_CLEAR_LDAP=yes``) in ``local.conf``.  To enable the
-#    # Keystone Identity Driver (``keystone.identity.backends.ldap.Identity``)
-#    # set ``KEYSTONE_IDENTITY_BACKEND`` to ``ldap`` (e.g.
-#    # ``KEYSTONE_IDENTITY_BACKEND=ldap``) in ``local.conf``.
-#
-#    # Only request LDAP password if the service is enabled
-#    if is_service_enabled ldap; then
-#        read_password LDAP_PASSWORD "ENTER A PASSWORD TO USE FOR LDAP"
-#    fi
-#fi
-#
-#
-## Swift
-## -----
-#
-#if is_service_enabled s-proxy; then
-#    # We only ask for Swift Hash if we have enabled swift service.
-#    # ``SWIFT_HASH`` is a random unique string for a swift cluster that
-#    # can never change.
-#    read_password SWIFT_HASH "ENTER A RANDOM SWIFT HASH."
-#
-#    if [[ -z "$SWIFT_TEMPURL_KEY" ]] && [[ "$SWIFT_ENABLE_TEMPURLS" == "True" ]]; then
-#        read_password SWIFT_TEMPURL_KEY "ENTER A KEY FOR SWIFT TEMPURLS."
-#    fi
-#fi
-#
-## Save configuration values
-#save_stackenv $LINENO
-#
-#
-## Install Packages
-## ================
-#
-## OpenStack uses a fair number of other projects.
-#
-## Bring down global requirements before any use of pip_install. This is
-## necessary to ensure that the constraints file is in place before we
-## attempt to apply any constraints to pip installs.
-## We always need the master branch in addition to any stable branch, so
-## override GIT_DEPTH here.
-#GIT_DEPTH=0 git_clone $REQUIREMENTS_REPO $REQUIREMENTS_DIR $REQUIREMENTS_BRANCH  # NOTE (cuongdm3): clone the requirements repo
-#
-## Install package requirements
-## Source it so the entire environment is available
-#echo_summary "Installing package prerequisites"
-#source $TOP_DIR/tools/install_prereqs.sh # NOTE (cuongdm3): source file install_prereqs.sh inside devstack/tools directory
-#
+
+
+# Queue Configuration
+# -------------------
+
+# Rabbit connection info
+# In multi node DevStack, second node needs ``RABBIT_USERID``, but rabbit
+# isn't enabled.
+if is_service_enabled rabbit; then
+    read_password RABBIT_PASSWORD "ENTER A PASSWORD TO USE FOR RABBIT."
+fi
+
+
+# Keystone
+# --------
+
+if is_service_enabled keystone; then
+    # Services authenticate to Identity with servicename/``SERVICE_PASSWORD``
+    read_password SERVICE_PASSWORD "ENTER A SERVICE_PASSWORD TO USE FOR THE SERVICE AUTHENTICATION."
+    # Horizon currently truncates usernames and passwords at 20 characters
+    read_password ADMIN_PASSWORD "ENTER A PASSWORD TO USE FOR HORIZON AND KEYSTONE (20 CHARS OR LESS)."
+
+    # Keystone can now optionally install OpenLDAP by enabling the ``ldap``
+    # service in ``local.conf`` (e.g. ``enable_service ldap``).
+    # To clean out the Keystone contents in OpenLDAP set ``KEYSTONE_CLEAR_LDAP``
+    # to ``yes`` (e.g. ``KEYSTONE_CLEAR_LDAP=yes``) in ``local.conf``.  To enable the
+    # Keystone Identity Driver (``keystone.identity.backends.ldap.Identity``)
+    # set ``KEYSTONE_IDENTITY_BACKEND`` to ``ldap`` (e.g.
+    # ``KEYSTONE_IDENTITY_BACKEND=ldap``) in ``local.conf``.
+
+    # Only request LDAP password if the service is enabled
+    if is_service_enabled ldap; then
+        read_password LDAP_PASSWORD "ENTER A PASSWORD TO USE FOR LDAP"
+    fi
+fi
+
+
+# Swift
+# -----
+
+if is_service_enabled s-proxy; then
+    # We only ask for Swift Hash if we have enabled swift service.
+    # ``SWIFT_HASH`` is a random unique string for a swift cluster that
+    # can never change.
+    read_password SWIFT_HASH "ENTER A RANDOM SWIFT HASH."
+
+    if [[ -z "$SWIFT_TEMPURL_KEY" ]] && [[ "$SWIFT_ENABLE_TEMPURLS" == "True" ]]; then
+        read_password SWIFT_TEMPURL_KEY "ENTER A KEY FOR SWIFT TEMPURLS."
+    fi
+fi
+
+# Save configuration values
+save_stackenv $LINENO
+
+
+# Install Packages
+# ================
+
+# OpenStack uses a fair number of other projects.
+
+# Bring down global requirements before any use of pip_install. This is
+# necessary to ensure that the constraints file is in place before we
+# attempt to apply any constraints to pip installs.
+# We always need the master branch in addition to any stable branch, so
+# override GIT_DEPTH here.
+GIT_DEPTH=0 git_clone $REQUIREMENTS_REPO $REQUIREMENTS_DIR $REQUIREMENTS_BRANCH  # NOTE (cuongdm3): clone the requirements repo
+
+# Install package requirements
+# Source it so the entire environment is available
+echo_summary "Installing package prerequisites"
+source $TOP_DIR/tools/install_prereqs.sh # NOTE (cuongdm3): source file install_prereqs.sh inside devstack/tools directory
+
 ## Configure an appropriate Python environment.
 ##
 ## NOTE(ianw) 2021-08-11 : We install the latest pip here because pip
