@@ -58,8 +58,13 @@ function cleanup_database_mysql {
 
 function recreate_database_mysql {
   local db=$1
-  mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "DROP DATABASE IF EXISTS $db;"
-  mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "CREATE DATABASE $db CHARACTER SET utf8;"
+  if [[ "$THIRD_SERVICES_IN_DOCKER" == "False" ]]; then
+    mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "DROP DATABASE IF EXISTS $db;"
+    mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "CREATE DATABASE $db CHARACTER SET utf8;"
+  else
+    docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -e "DROP DATABASE IF EXISTS $db;"
+    docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -e "CREATE DATABASE $db CHARACTER SET utf8;"
+  fi
 }
 
 function configure_database_mysql {
@@ -93,12 +98,14 @@ function configure_database_mysql {
   iniset -sudo $my_conf mysqld bind-address "$(ipv6_unquote $SERVICE_LISTEN_ADDRESS)"
 
   # (Re)Start mysql-server
-  if is_fedora; then
-    # service is not started by default
-    start_service $MYSQL_SERVICE_NAME
-  elif is_ubuntu; then
-    # required since bind-address could have changed above
-    restart_service $MYSQL_SERVICE_NAME
+  if [[ "$THIRD_SERVICES_IN_DOCKER" == "False" ]]; then
+    if is_fedora; then
+      # service is not started by default
+      start_service $MYSQL_SERVICE_NAME
+    elif is_ubuntu; then
+      # required since bind-address could have changed above
+      restart_service $MYSQL_SERVICE_NAME
+    fi
   fi
 
   # Set the root password - only works the first time. For Ubuntu, we already
@@ -133,10 +140,16 @@ function configure_database_mysql {
     fi
   fi
   if ! (is_ubuntu && [[ "$DISTRO" == "jammy" ]] && [ "$MYSQL_SERVICE_NAME" == "mariadb" ]); then
-    # Create DB user if it does not already exist
-    sudo mysql $cmd_args -e "CREATE USER IF NOT EXISTS '$DATABASE_USER'@'%' identified by '$DATABASE_PASSWORD';"
-    # Update the DB to give user '$DATABASE_USER'@'%' full control of the all databases:
-    sudo mysql $cmd_args -e "GRANT ALL PRIVILEGES ON *.* TO '$DATABASE_USER'@'%';"
+    if [[ "$THIRD_SERVICES_IN_DOCKER" == "False" ]]; then
+      # Create DB user if it does not already exist
+      sudo mysql $cmd_args -e "CREATE USER IF NOT EXISTS '$DATABASE_USER'@'%' identified by '$DATABASE_PASSWORD';"
+      # Update the DB to give user '$DATABASE_USER'@'%' full control of the all databases:
+      sudo mysql $cmd_args -e "GRANT ALL PRIVILEGES ON *.* TO '$DATABASE_USER'@'%';"
+    else
+      docker exec openstack-mysql mysql $cmd_args -e "CREATE USER IF NOT EXISTS '$DATABASE_USER'@'%' identified by '$DATABASE_PASSWORD';"
+      # Update the DB to give user '$DATABASE_USER'@'%' full control of the all databases:
+      docker exec openstack-mysql mysql $cmd_args -e "GRANT ALL PRIVILEGES ON *.* TO '$DATABASE_USER'@'%';"
+    fi
   fi
 
   # Now update ``my.cnf`` for some local needs and restart the mysql service
@@ -174,9 +187,16 @@ function configure_database_mysql {
 
     # Create our stats database for accounting
     recreate_database stats
-    mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST -e \
-      "CREATE TABLE queries (db VARCHAR(32), op VARCHAR(32),
+
+    if [[ "$THIRD_SERVICES_IN_DOCKER" == "False" ]]; then
+      mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST -e \
+        "CREATE TABLE queries (db VARCHAR(32), op VARCHAR(32),
                 count INT, PRIMARY KEY (db, op)) ENGINE MEMORY" stats
+    else
+      docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST -e \
+        "CREATE TABLE queries (db VARCHAR(32), op VARCHAR(32),
+                count INT, PRIMARY KEY (db, op)) ENGINE MEMORY" stats
+    fi
   fi
 
   if [[ "$MYSQL_REDUCE_MEMORY" == "True" ]]; then
@@ -188,8 +208,9 @@ function configure_database_mysql {
     iniset -sudo $my_conf mysqld sort_buffer_size 8M
     iniset -sudo $my_conf mysqld max_allowed_packet 8M
   fi
-
-  restart_service $MYSQL_SERVICE_NAME
+  if [[ "$THIRD_SERVICES_IN_DOCKER" == "False" ]]; then
+    restart_service $MYSQL_SERVICE_NAME
+  fi
 }
 
 function install_database_mysql_docker {

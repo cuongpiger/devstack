@@ -1,0 +1,2 @@
+[sqlalchemy.plugins]
+dbcounter = dbcounter:LogCursorEventsPlugin
