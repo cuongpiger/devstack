@@ -4,20 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9e6e0b1b-5d15-4c28-9a2c-14db1ad84b04" name="Changes" comment="">
+    <list default="true" id="6a8d0da3-491e-4339-beaa-b8341d5177c7" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.vscode/PythonImportHelper-v2-Completion.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/devstack.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/devstack.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/files/debs/general" beforeDir="false" afterPath="$PROJECT_DIR$/files/debs/general" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions" beforeDir="false" afterPath="$PROJECT_DIR$/functions" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/functions-common" beforeDir="false" afterPath="$PROJECT_DIR$/functions-common" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inc/python" beforeDir="false" afterPath="$PROJECT_DIR$/inc/python" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/apache" beforeDir="false" afterPath="$PROJECT_DIR$/lib/apache" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/database" beforeDir="false" afterPath="$PROJECT_DIR$/lib/database" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/infra" beforeDir="false" afterPath="$PROJECT_DIR$/lib/infra" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/keystone" beforeDir="false" afterPath="$PROJECT_DIR$/lib/keystone" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/libraries" beforeDir="false" afterPath="$PROJECT_DIR$/lib/libraries" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/rpc_backend" beforeDir="false" afterPath="$PROJECT_DIR$/lib/rpc_backend" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/local.conf" beforeDir="false" afterPath="$PROJECT_DIR$/local.conf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/stack.sh" beforeDir="false" afterPath="$PROJECT_DIR$/stack.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/install_prereqs.sh" beforeDir="false" afterPath="$PROJECT_DIR$/tools/install_prereqs.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/stackrc" beforeDir="false" afterPath="$PROJECT_DIR$/stackrc" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,91 +22,42 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitToolBoxStore">
-    <option name="recentBranches">
-      <RecentBranches>
-        <option name="branchesForRepo">
-          <list>
-            <RecentBranchesForRepo>
-              <option name="branches">
-                <list>
-                  <RecentBranch>
-                    <option name="branchName" value="master" />
-                    <option name="lastUsedInstant" value="1683605954" />
-                  </RecentBranch>
-                  <RecentBranch>
-                    <option name="branchName" value="dev/zed" />
-                    <option name="lastUsedInstant" value="1683605953" />
-                  </RecentBranch>
-                </list>
-              </option>
-              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
-            </RecentBranchesForRepo>
-          </list>
-        </option>
-      </RecentBranches>
-    </option>
-  </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$PROJECT_DIR$/installation-logs/log_01" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/local.conf" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="2PJz2Rxcb8XPYZXvW0rfKTimhiI" />
-  <component name="ProjectLevelVcsManager">
-    <ConfirmationsSetting value="2" id="Add" />
-  </component>
+  <component name="ProjectId" id="2Pd0gsHPw5pMMEo5DEgPeHEvmy4" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/cuongdm/Documents/my-openstack/keystone&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="9e6e0b1b-5d15-4c28-9a2c-14db1ad84b04" name="Changes" comment="" />
-      <created>1683189764638</created>
+      <changelist id="6a8d0da3-491e-4339-beaa-b8341d5177c7" name="Changes" comment="" />
+      <created>1683771768034</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1683189764638</updated>
-      <workItem from="1683189765784" duration="6029000" />
-      <workItem from="1683250530749" duration="21626000" />
-      <workItem from="1683364672730" duration="6740000" />
-      <workItem from="1683443076937" duration="3388000" />
-      <workItem from="1683470315608" duration="2409000" />
-      <workItem from="1683510077093" duration="20801000" />
-      <workItem from="1683538291145" duration="68000" />
-      <workItem from="1683538490222" duration="689000" />
-      <workItem from="1683544239046" duration="321000" />
-      <workItem from="1683596558005" duration="67000" />
-      <workItem from="1683600242490" duration="3756000" />
-      <workItem from="1683606111716" duration="2328000" />
-      <workItem from="1683615131684" duration="9268000" />
-      <workItem from="1683683054025" duration="13910000" />
-      <workItem from="1683701706620" duration="2183000" />
+      <updated>1683771768034</updated>
+      <workItem from="1683771770068" duration="9668000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
-  </component>
-  <component name="VcsManagerConfiguration">
-    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
 </project>
