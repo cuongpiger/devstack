@@ -64,6 +64,25 @@ function create_conda_env_for {
   get_conda_python_path "$env_name"
 }
 
-if [[ "$CONDA_ENABLED" == "True" ]]; then
-  echo "hah"
+function is_in_array {
+  local value=$1
+  shift
+  local array=("$@")
+
+  for element in "${array[@]}"; do
+    if [[ "$element" == "$value" ]]; then
+      return 0 # Value found in array
+    fi
+  done
+
+  return 1 # Value not found in array
+}
+
+PLUGINS=("banana" "apple")
+PLUGIN_NAME="banana"
+
+if is_in_array "$PLUGIN_NAME" "${PLUGINS[@]}"; then
+    echo "Value '$PLUGIN_NAME' is in the array."
+else
+    echo "Value '$PLUGIN_NAME' is not in the array."
 fi

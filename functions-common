@@ -1736,6 +1736,13 @@ function fetch_plugins {
 
   echo "Fetching DevStack plugins" # NOTE (cuongdm3): osprofiler will be cloned into /opt/stack/osprofiler directory
   for plugin in ${plugins//,/ }; do
+    if is_in_array "$plugin" "${OVERRIDE_PLUGINS[@]}"; then
+      if [[ "$plugin" == "osprofiler" && "$OSPROFILER_DIRECTORY_PATH" != "" ]]; then
+        GITDIR["$plugin"]=$OSPROFILER_DIRECTORY_PATH
+        echo "Using osprofiler from $OSPROFILER_DIRECTORY_PATH"
+        continue
+      fi
+    fi
     git_clone_by_name $plugin
   done
 }
@@ -2558,5 +2565,19 @@ function create_conda_env_for {
     conda create -n $env_name python=$CONDA_PYTHON_VERSION pip
   fi
 
-#  get_conda_python_path "$env_name"
+  #  get_conda_python_path "$env_name"
+}
+
+function is_in_array {
+  local value=$1
+  shift
+  local array=("$@")
+
+  for element in "${array[@]}"; do
+    if [[ "$element" == "$value" ]]; then
+      return 0 # Value found in array
+    fi
+  done
+
+  return 1 # Value not found in array
 }
