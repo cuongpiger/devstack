@@ -857,30 +857,30 @@ fi
 if is_service_enabled etcd3; then  # NOTE (cuongdm3): install etcd3 server
     install_etcd3
 fi
-#
-## Setup TLS certs
-## ---------------
-#
-## Do this early, before any webservers are set up to ensure
-## we don't run into problems with missing certs when apache
-## is restarted.
-#if is_service_enabled tls-proxy; then  # NOTE (cuongdm3): skip this in my scenario
-#    configure_CA
-#    init_CA
-#    init_cert
-#fi
-#
-## Dstat
-## -----
-#
-## Install dstat services prerequisites
-#install_dstat  # NOTE (cuongdm3): install dstat package using pip command, but skip this in my scenario
-#
-#
-## Check Out and Install Source
-## ----------------------------
-#
-#echo_summary "Installing OpenStack project source"
+
+# Setup TLS certs
+# ---------------
+
+# Do this early, before any webservers are set up to ensure
+# we don't run into problems with missing certs when apache
+# is restarted.
+if is_service_enabled tls-proxy; then  # NOTE (cuongdm3): skip this in my scenario
+    configure_CA
+    init_CA
+    init_cert
+fi
+
+# Dstat
+# -----
+
+# Install dstat services prerequisites
+install_dstat  # NOTE (cuongdm3): install dstat package using pip command, but skip this in my scenario
+
+
+# Check Out and Install Source
+# ----------------------------
+
+echo_summary "Installing OpenStack project source"
 #
 ## Install additional libraries
 #install_libs
