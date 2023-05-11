@@ -881,112 +881,112 @@ install_dstat  # NOTE (cuongdm3): install dstat package using pip command, but s
 # ----------------------------
 
 echo_summary "Installing OpenStack project source"
-#
-## Install additional libraries
-#install_libs
-#
-## Install uwsgi
-#install_apache_uwsgi  # NOTE (cuongdm3): using apt to install these package: uwsgi uwsgi-plugin-python3 libapache2-mod-proxy-uwsgi
-#
-## Install client libraries
-#install_keystoneauth  # NOTE (cuongdm3): install this
-#install_keystoneclient  # NOTE (cuongdm3): install this
-#install_glanceclient  # NOTE (cuongdm3): install this
-#install_cinderclient  # NOTE (cuongdm3): install this
-#install_novaclient  # NOTE (cuongdm3): install this
-#if is_service_enabled swift glance horizon; then
-#    install_swiftclient  # NOTE (cuongdm3): install python-swiftclient package using pip command
-#fi
-#if is_service_enabled neutron nova horizon; then
-#    install_neutronclient  # NOTE (cuongdm3): install python-neutronclient package using pip command
-#fi
-#
-## Install middleware
-#install_keystonemiddleware  # NOTE (cuongdm3): install keystonemiddleware and python-memcached package using pip command on the host machine
-#
-#if is_service_enabled keystone; then
-#    if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
-#        stack_install_service keystone  # NOTE (cuongdm3): this scope is executed, install on the host machine
-#        configure_keystone  # set keystone.conf file
-#    fi
-#fi
-#
-#if is_service_enabled swift; then  # NOTE (cuongdm3): do not run this
-#    if is_service_enabled ceilometer; then
-#        install_ceilometermiddleware
-#    fi
-#    stack_install_service swift
-#    configure_swift
-#
-#    # s3api middleware to provide S3 emulation to Swift
-#    if is_service_enabled s3api; then
-#        # Replace the nova-objectstore port by the swift port
-#        S3_SERVICE_PORT=8080
-#    fi
-#fi
-#
-#if is_service_enabled g-api n-api; then  # NOTE (cuongdm3): do not run this
-#    # Image catalog service
-#    stack_install_service glance
-#    configure_glance
-#fi
-#
-#if is_service_enabled cinder; then  # NOTE (cuongdm3): do not run this
-#    # Block volume service
-#    stack_install_service cinder
-#    configure_cinder
-#fi
-#
-#if is_service_enabled neutron; then  # NOTE (cuongdm3): do not run this
-#    # Network service
-#    stack_install_service neutron
-#fi
-#
-#if is_service_enabled nova; then  # NOTE (cuongdm3): do not run this
-#    # Compute service
-#    stack_install_service nova
-#    configure_nova
-#fi
-#
-#if is_service_enabled placement; then  # NOTE (cuongdm3): do not run this
-#    # placement api
-#    stack_install_service placement
-#    configure_placement
-#fi
-#
-## create a placement-client fake service to know we need to configure
-## placement connectivity. We configure the placement service for nova
-## if placement-api or placement-client is active, and n-cpu on the
-## same box.
-#if is_service_enabled placement placement-client; then  # NOTE (cuongdm3): do not run this
-#    if is_service_enabled n-cpu || is_service_enabled n-sch; then
-#        configure_placement_nova_compute
-#    fi
-#fi
-#
-#if is_service_enabled horizon; then
-#    # dashboard
-#    stack_install_service horizon
-#fi
-#
-#if is_service_enabled tls-proxy; then
-#    fix_system_ca_bundle_path
-#fi
-#
-## Extras Install
-## --------------
-#
-## Phase: install
-#run_phase stack install
-#
-## Install the OpenStack client, needed for most setup commands
-#if use_library_from_git "python-openstackclient"; then
-#    git_clone_by_name "python-openstackclient"
-#    setup_dev_lib "python-openstackclient"
-#else
-#    pip_install_gr python-openstackclient
-#fi
-#
+
+# Install additional libraries
+install_libs
+
+# Install uwsgi
+install_apache_uwsgi  # NOTE (cuongdm3): using apt to install these package: uwsgi uwsgi-plugin-python3 libapache2-mod-proxy-uwsgi
+
+# Install client libraries
+install_keystoneauth  # NOTE (cuongdm3): install this
+install_keystoneclient  # NOTE (cuongdm3): install this
+install_glanceclient  # NOTE (cuongdm3): install this
+install_cinderclient  # NOTE (cuongdm3): install this
+install_novaclient  # NOTE (cuongdm3): install this
+if is_service_enabled swift glance horizon; then
+    install_swiftclient  # NOTE (cuongdm3): install python-swiftclient package using pip command
+fi
+if is_service_enabled neutron nova horizon; then
+    install_neutronclient  # NOTE (cuongdm3): install python-neutronclient package using pip command
+fi
+
+# Install middleware
+install_keystonemiddleware  # NOTE (cuongdm3): install keystonemiddleware and python-memcached package using pip command on the host machine
+
+if is_service_enabled keystone; then
+    if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
+        stack_install_service keystone  # NOTE (cuongdm3): this scope is executed, install on the host machine
+        configure_keystone  # set keystone.conf file
+    fi
+fi
+
+if is_service_enabled swift; then  # NOTE (cuongdm3): do not run this
+    if is_service_enabled ceilometer; then
+        install_ceilometermiddleware
+    fi
+    stack_install_service swift
+    configure_swift
+
+    # s3api middleware to provide S3 emulation to Swift
+    if is_service_enabled s3api; then
+        # Replace the nova-objectstore port by the swift port
+        S3_SERVICE_PORT=8080
+    fi
+fi
+
+if is_service_enabled g-api n-api; then  # NOTE (cuongdm3): do not run this
+    # Image catalog service
+    stack_install_service glance
+    configure_glance
+fi
+
+if is_service_enabled cinder; then  # NOTE (cuongdm3): do not run this
+    # Block volume service
+    stack_install_service cinder
+    configure_cinder
+fi
+
+if is_service_enabled neutron; then  # NOTE (cuongdm3): do not run this
+    # Network service
+    stack_install_service neutron
+fi
+
+if is_service_enabled nova; then  # NOTE (cuongdm3): do not run this
+    # Compute service
+    stack_install_service nova
+    configure_nova
+fi
+
+if is_service_enabled placement; then  # NOTE (cuongdm3): do not run this
+    # placement api
+    stack_install_service placement
+    configure_placement
+fi
+
+# create a placement-client fake service to know we need to configure
+# placement connectivity. We configure the placement service for nova
+# if placement-api or placement-client is active, and n-cpu on the
+# same box.
+if is_service_enabled placement placement-client; then  # NOTE (cuongdm3): do not run this
+    if is_service_enabled n-cpu || is_service_enabled n-sch; then
+        configure_placement_nova_compute
+    fi
+fi
+
+if is_service_enabled horizon; then
+    # dashboard
+    stack_install_service horizon
+fi
+
+if is_service_enabled tls-proxy; then
+    fix_system_ca_bundle_path
+fi
+
+# Extras Install
+# --------------
+
+# Phase: install
+run_phase stack install
+
+# Install the OpenStack client, needed for most setup commands
+if use_library_from_git "python-openstackclient"; then
+    git_clone_by_name "python-openstackclient"
+    setup_dev_lib "python-openstackclient"
+else
+    pip_install_gr python-openstackclient
+fi
+
 ## Installs alias for osc so that we can collect timing for all
 ## osc commands. Alias dies with stack.sh.
 #install_oscwrap
