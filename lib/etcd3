@@ -37,7 +37,11 @@ fi
 
 # start_etcd3() - Starts to run the etcd process
 function start_etcd3 {
-  local cmd="$ETCD_BIN_DIR/etcd"
+  if [[ "$THIRD_SERVICES_IN_DOCKER" == "True" ]]; then
+    local cmd="docker exec openstack-etcd3 etcd"
+  else
+    local cmd="$ETCD_BIN_DIR/etcd"
+  fi
   cmd+=" --name $HOSTNAME --data-dir $ETCD_DATA_DIR"
   cmd+=" --initial-cluster-state new --initial-cluster-token etcd-cluster-01"
   cmd+=" --initial-cluster $HOSTNAME=http://$SERVICE_HOST:$ETCD_PEER_PORT"
@@ -63,10 +67,13 @@ function start_etcd3 {
   if is_arch "aarch64"; then
     iniset -sudo $unitfile "Service" "Environment" "ETCD_UNSUPPORTED_ARCH=arm64"
   fi
-
-  $SYSTEMCTL daemon-reload
-  $SYSTEMCTL enable $ETCD_SYSTEMD_SERVICE
-  $SYSTEMCTL start $ETCD_SYSTEMD_SERVICE
+  if [[ "$THIRD_SERVICES_IN_DOCKER" == "False" ]]; then
+    $SYSTEMCTL daemon-reload
+    $SYSTEMCTL enable $ETCD_SYSTEMD_SERVICE
+    $SYSTEMCTL start $ETCD_SYSTEMD_SERVICE
+  else
+    docker container restart openstack-etcd3
+  fi
 }
 
 # stop_etcd3() stops the etcd3 process

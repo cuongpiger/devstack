@@ -1074,20 +1074,20 @@ fi
 
 # A better kind of sysstat, with the top process per time slice
 start_dstat
-#
-## Run a background tcpdump for debugging
-## Note: must set TCPDUMP_ARGS with the enabled service
-#if is_service_enabled tcpdump; then
-#    start_tcpdump
-#fi
-#
-## Etcd
-## -----
-#
-## etcd is a distributed key value store that provides a reliable way to store data across a cluster of machines
-#if is_service_enabled etcd3; then
-#    start_etcd3
-#fi
+
+# Run a background tcpdump for debugging
+# Note: must set TCPDUMP_ARGS with the enabled service
+if is_service_enabled tcpdump; then
+    start_tcpdump
+fi
+
+# Etcd
+# -----
+
+# etcd is a distributed key value store that provides a reliable way to store data across a cluster of machines
+if is_service_enabled etcd3; then
+    start_etcd3
+fi
 #
 ## Keystone
 ## --------
