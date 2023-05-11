@@ -600,119 +600,119 @@ source $TOP_DIR/lib/rpc_backend
 # Clone all external plugins
 fetch_plugins  # NOTE (cuongdm3): the osprofiler will be read here
 
-## Plugin Phase 0: override_defaults - allow plugins to override
-## defaults before other services are run
-#run_phase override_defaults
+# Plugin Phase 0: override_defaults - allow plugins to override
+# defaults before other services are run
+run_phase override_defaults
+
+# Import Apache functions
+source $TOP_DIR/lib/apache
+
+# Import TLS functions
+source $TOP_DIR/lib/tls
+
+# Source project function libraries
+source $TOP_DIR/lib/infra
+source $TOP_DIR/lib/libraries
+source $TOP_DIR/lib/lvm
+source $TOP_DIR/lib/horizon
+source $TOP_DIR/lib/keystone
+source $TOP_DIR/lib/glance
+source $TOP_DIR/lib/nova
+source $TOP_DIR/lib/placement
+source $TOP_DIR/lib/cinder
+source $TOP_DIR/lib/swift
+source $TOP_DIR/lib/neutron
+source $TOP_DIR/lib/ldap
+source $TOP_DIR/lib/dstat
+source $TOP_DIR/lib/tcpdump
+source $TOP_DIR/lib/etcd3
+source $TOP_DIR/lib/os-vif
+
+# Extras Source
+# --------------
+
+# Phase: source
+run_phase source
+
+
+# Interactive Configuration
+# -------------------------
+
+# Do all interactive config up front before the logging spew begins
+
+# Generic helper to configure passwords
+function read_password {
+    local xtrace
+    xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    var=$1; msg=$2
+    pw=${!var}
+
+    if [[ -f $RC_DIR/localrc ]]; then
+        localrc=$TOP_DIR/localrc
+    else
+        localrc=$TOP_DIR/.localrc.password
+    fi
+
+    # If the password is not defined yet, proceed to prompt user for a password.
+    if [ ! $pw ]; then
+        # If there is no localrc file, create one
+        if [ ! -e $localrc ]; then
+            touch $localrc
+        fi
+
+        # Presumably if we got this far it can only be that our
+        # localrc is missing the required password.  Prompt user for a
+        # password and write to localrc.
+
+        echo ''
+        echo '################################################################################'
+        echo $msg
+        echo '################################################################################'
+        echo "This value will be written to ${localrc} file so you don't have to enter it "
+        echo "again.  Use only alphanumeric characters."
+        echo "If you leave this blank, a random default value will be used."
+        pw=" "
+        while true; do
+            echo "Enter a password now:"
+            read -e $var
+            pw=${!var}
+            [[ "$pw" = "`echo $pw | tr -cd [:alnum:]`" ]] && break
+            echo "Invalid chars in password.  Try again:"
+        done
+        if [ ! $pw ]; then
+            pw=$(generate_hex_string 10)
+        fi
+        eval "$var=$pw"
+        echo "$var=$pw" >> $localrc
+    fi
+
+    # restore previous xtrace value
+    $xtrace
+}
+
+
+# Database Configuration
+# ----------------------
+
+# To select between database backends, add the following to ``local.conf``:
 #
-## Import Apache functions
-#source $TOP_DIR/lib/apache
+#    disable_service mysql
+#    enable_service postgresql
 #
-## Import TLS functions
-#source $TOP_DIR/lib/tls
-#
-## Source project function libraries
-#source $TOP_DIR/lib/infra
-#source $TOP_DIR/lib/libraries
-#source $TOP_DIR/lib/lvm
-#source $TOP_DIR/lib/horizon
-#source $TOP_DIR/lib/keystone
-#source $TOP_DIR/lib/glance
-#source $TOP_DIR/lib/nova
-#source $TOP_DIR/lib/placement
-#source $TOP_DIR/lib/cinder
-#source $TOP_DIR/lib/swift
-#source $TOP_DIR/lib/neutron
-#source $TOP_DIR/lib/ldap
-#source $TOP_DIR/lib/dstat
-#source $TOP_DIR/lib/tcpdump
-#source $TOP_DIR/lib/etcd3
-#source $TOP_DIR/lib/os-vif
-#
-## Extras Source
-## --------------
-#
-## Phase: source
-#run_phase source
-#
-#
-## Interactive Configuration
-## -------------------------
-#
-## Do all interactive config up front before the logging spew begins
-#
-## Generic helper to configure passwords
-#function read_password {
-#    local xtrace
-#    xtrace=$(set +o | grep xtrace)
-#    set +o xtrace
-#    var=$1; msg=$2
-#    pw=${!var}
-#
-#    if [[ -f $RC_DIR/localrc ]]; then
-#        localrc=$TOP_DIR/localrc
-#    else
-#        localrc=$TOP_DIR/.localrc.password
-#    fi
-#
-#    # If the password is not defined yet, proceed to prompt user for a password.
-#    if [ ! $pw ]; then
-#        # If there is no localrc file, create one
-#        if [ ! -e $localrc ]; then
-#            touch $localrc
-#        fi
-#
-#        # Presumably if we got this far it can only be that our
-#        # localrc is missing the required password.  Prompt user for a
-#        # password and write to localrc.
-#
-#        echo ''
-#        echo '################################################################################'
-#        echo $msg
-#        echo '################################################################################'
-#        echo "This value will be written to ${localrc} file so you don't have to enter it "
-#        echo "again.  Use only alphanumeric characters."
-#        echo "If you leave this blank, a random default value will be used."
-#        pw=" "
-#        while true; do
-#            echo "Enter a password now:"
-#            read -e $var
-#            pw=${!var}
-#            [[ "$pw" = "`echo $pw | tr -cd [:alnum:]`" ]] && break
-#            echo "Invalid chars in password.  Try again:"
-#        done
-#        if [ ! $pw ]; then
-#            pw=$(generate_hex_string 10)
-#        fi
-#        eval "$var=$pw"
-#        echo "$var=$pw" >> $localrc
-#    fi
-#
-#    # restore previous xtrace value
-#    $xtrace
-#}
-#
-#
-## Database Configuration
-## ----------------------
-#
-## To select between database backends, add the following to ``local.conf``:
-##
-##    disable_service mysql
-##    enable_service postgresql
-##
-## The available database backends are listed in ``DATABASE_BACKENDS`` after
-## ``lib/database`` is sourced. ``mysql`` is the default.
-#
-#if initialize_database_backends; then
-#    echo "Using $DATABASE_TYPE database backend"  # NOTE (cuongdm3): DATABASE_TYPE=mysql
-#    # Last chance for the database password. This must be handled here
-#    # because read_password is not a library function.
-#    read_password DATABASE_PASSWORD "ENTER A PASSWORD TO USE FOR THE DATABASE."
-#
-#    define_database_baseurl  # NOTE (cuongdm3): this line is executed
-#else
-#    echo "No database enabled"
-#fi
+# The available database backends are listed in ``DATABASE_BACKENDS`` after
+# ``lib/database`` is sourced. ``mysql`` is the default.
+
+if initialize_database_backends; then
+    echo "Using $DATABASE_TYPE database backend"  # NOTE (cuongdm3): DATABASE_TYPE=mysql
+    # Last chance for the database password. This must be handled here
+    # because read_password is not a library function.
+    read_password DATABASE_PASSWORD "ENTER A PASSWORD TO USE FOR THE DATABASE."
+
+    define_database_baseurl  # NOTE (cuongdm3): this line is executed
+else
+    echo "No database enabled"
+fi
 #
 #
 ## Queue Configuration
