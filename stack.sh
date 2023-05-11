@@ -1066,14 +1066,14 @@ if [[ $ENABLE_KSM == "True" ]] ; then
 fi
 
 
-## Start Services
-## ==============
-#
-## Dstat
-## -----
-#
-## A better kind of sysstat, with the top process per time slice
-#start_dstat
+# Start Services
+# ==============
+
+# Dstat
+# -----
+
+# A better kind of sysstat, with the top process per time slice
+start_dstat
 #
 ## Run a background tcpdump for debugging
 ## Note: must set TCPDUMP_ARGS with the enabled service
