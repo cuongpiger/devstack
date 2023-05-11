@@ -849,14 +849,14 @@ fi
 if [ -n "$DATABASE_TYPE" ]; then
     install_database_python  # NOTE (cuongdm3): install pymysql package pip on the host machine
 fi
-#
-#if is_service_enabled neutron; then  # NOTE (cuongdm3): skip this in my scenario
-#    install_neutron_agent_packages
-#fi
-#
-#if is_service_enabled etcd3; then  # NOTE (cuongdm3): install etcd3 server
-#    install_etcd3
-#fi
+
+if is_service_enabled neutron; then  # NOTE (cuongdm3): skip this in my scenario
+    install_neutron_agent_packages
+fi
+
+if is_service_enabled etcd3; then  # NOTE (cuongdm3): install etcd3 server
+    install_etcd3
+fi
 #
 ## Setup TLS certs
 ## ---------------
