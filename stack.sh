@@ -1088,18 +1088,18 @@ fi
 if is_service_enabled etcd3; then
     start_etcd3
 fi
-#
-## Keystone
-## --------
-#
-#if is_service_enabled tls-proxy; then
-#    start_tls_proxy http-services '*' 443 $SERVICE_HOST 80
-#fi
-#
-## Write a clouds.yaml file and use the devstack-admin cloud
-#write_clouds_yaml
-#export OS_CLOUD=${OS_CLOUD:-devstack-admin}
-#
+
+# Keystone
+# --------
+
+if is_service_enabled tls-proxy; then
+    start_tls_proxy http-services '*' 443 $SERVICE_HOST 80
+fi
+
+# Write a clouds.yaml file and use the devstack-admin cloud
+write_clouds_yaml
+export OS_CLOUD=${OS_CLOUD:-devstack-admin}
+
 #if is_service_enabled keystone; then
 #    echo_summary "Starting Keystone"
 #
