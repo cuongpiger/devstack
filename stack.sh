@@ -809,39 +809,39 @@ fixup_all  # NOTE (cuongdm3): this line remove the egg.info directory
 # Install subunit for the subunit output stream
 pip_install -U os-testr  # NOTE (cuongdm3): install os-testr package using pip command
 
-## the default rate limit of 1000 messages / 30 seconds is not
-## sufficient given how verbose our logging is.
-#iniset -sudo /etc/systemd/journald.conf "Journal" "RateLimitBurst" "0"
-#sudo systemctl restart systemd-journald
-#
-## Virtual Environment
-## -------------------
-#
-## Install required infra support libraries
-#install_infra
-#
-## Install bindep
-#$VIRTUALENV_CMD $DEST/bindep-venv  # NOTE (cuongdm3): create virtual env at /opt/stack/bindep-venv
-## TODO(ianw) : optionally install from zuul checkout?
-#$DEST/bindep-venv/bin/pip install bindep  # NOTE (cuongdm3): install bindep package using pip command inside bindep-venv virtual env
-#export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep  # NOTE (cuongdm3): export BINDEP_CMD, it will be /opt/stack/bindep-venv/bin/bindep
-#
-## Install packages as defined in plugin bindep.txt files
-#pkgs="$( _get_plugin_bindep_packages )"  # NOTE (cuongdm3): in my case, pkgs is empty
-#if [[ -n "${pkgs}" ]]; then  # NOTE (cuongdm3): this line is not run
-#    install_package ${pkgs}
-#fi
-#
-## Extras Pre-install
-## ------------------
-## Phase: pre-install
-#run_phase stack pre-install
-#
-## NOTE(danms): Set global limits before installing anything
-#set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}  # NOTE (cuongdm3): set DefaultLimitNOFILE to 2048
-#
-#install_rpc_backend  # NOTE (cuongdm3): install rabbitmq server
-#restart_rpc_backend  # NOTE (cuongdm3): restart rabbitmq server
+# the default rate limit of 1000 messages / 30 seconds is not
+# sufficient given how verbose our logging is.
+iniset -sudo /etc/systemd/journald.conf "Journal" "RateLimitBurst" "0"  # NOTE (cuongdm3): if run on localhost, this is not neccessary
+sudo systemctl restart systemd-journald
+
+# Virtual Environment
+# -------------------
+
+# Install required infra support libraries
+install_infra
+
+# Install bindep
+$VIRTUALENV_CMD $DEST/bindep-venv  # NOTE (cuongdm3): create virtual env at /opt/stack/bindep-venv
+# TODO(ianw) : optionally install from zuul checkout?
+$DEST/bindep-venv/bin/pip install bindep  # NOTE (cuongdm3): install bindep package using pip command inside bindep-venv virtual env
+export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep  # NOTE (cuongdm3): export BINDEP_CMD, it will be /opt/stack/bindep-venv/bin/bindep
+
+# Install packages as defined in plugin bindep.txt files
+pkgs="$( _get_plugin_bindep_packages )"  # NOTE (cuongdm3): in my case, pkgs is empty
+if [[ -n "${pkgs}" ]]; then  # NOTE (cuongdm3): this line is not run
+    install_package ${pkgs}
+fi
+
+# Extras Pre-install
+# ------------------
+# Phase: pre-install
+run_phase stack pre-install  # NOTE (cuongdm3): in my case, it current not run
+
+# NOTE(danms): Set global limits before installing anything
+set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}  # NOTE (cuongdm3): set DefaultLimitNOFILE to 2048
+
+install_rpc_backend  # NOTE (cuongdm3): install rabbitmq server
+restart_rpc_backend  # NOTE (cuongdm3): restart rabbitmq server
 #
 #if is_service_enabled $DATABASE_BACKENDS; then
 #    install_database  # NOTE (cuongdm3): install mysql server

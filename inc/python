@@ -162,12 +162,12 @@ function pip_install {
   # this works (for now...)
   local package_dir=${!#%\[*\]}
 
-  if [[ "$CONDA_ENABLED" == "True" ]]; then
-    local cmd_pip="$PYTHON -m pip"
-    local sudo_pip="sudo -H LC_ALL=en_US.UTF-8 SETUPTOOLS_USE_DISTUTILS=stdlib "
-  elif [[ -n ${PIP_VIRTUAL_ENV:=} && -d ${PIP_VIRTUAL_ENV} ]]; then
+  if [[ -n ${PIP_VIRTUAL_ENV:=} && -d ${PIP_VIRTUAL_ENV} ]]; then
     local cmd_pip=$PIP_VIRTUAL_ENV/bin/pip
     local sudo_pip="env"
+  elif [[ "$CONDA_ENABLED" == "True" ]]; then
+    local cmd_pip="$PYTHON -m pip"
+    local sudo_pip="sudo -H LC_ALL=en_US.UTF-8 SETUPTOOLS_USE_DISTUTILS=stdlib "
   else
     local cmd_pip="python$PYTHON3_VERSION -m pip"
     # See
