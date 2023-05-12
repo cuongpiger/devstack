@@ -28,7 +28,6 @@ files/get-pip.py*
 files/ir-deploy*
 files/ironic-inspector*
 files/etcd*
-/local.conf
 local.sh
 localrc
 proto
@@ -38,3 +37,5 @@ stack-screenrc
 userrc_early
 AUTHORS
 ChangeLog
+.idea
+.vscode

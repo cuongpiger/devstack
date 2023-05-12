@@ -956,3 +956,8 @@ ULIMIT_NOFILE=${ULIMIT_NOFILE:-2048}
 # Local variables:
 # mode: shell-script
 # End:
+
+
+
+############################################ CUSTOMIZING ############################################
+DOCKERIZED_DATABASE=${DOCKERIZED_DATABASE:-False}
