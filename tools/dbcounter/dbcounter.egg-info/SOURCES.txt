@@ -1,0 +1,8 @@
+dbcounter.py
+pyproject.toml
+setup.cfg
+dbcounter.egg-info/PKG-INFO
+dbcounter.egg-info/SOURCES.txt
+dbcounter.egg-info/dependency_links.txt
+dbcounter.egg-info/entry_points.txt
+dbcounter.egg-info/top_level.txt
