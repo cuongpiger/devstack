@@ -1816,7 +1816,7 @@ function plugin_override_defaults {
 # run_plugins
 #
 # Run the devstack/plugin.sh in all the plugin directories. These are
-# run in registration order.
+# run in registration order. This will install osprofiler
 function run_plugins {
   local mode=$1
   local phase=$2
@@ -1827,9 +1827,14 @@ function run_plugins {
     local dir=${GITDIR[$plugin]}
     if is_in_array "$plugin" "${OVERRIDE_PLUGINS[@]}"; then
       if [[ "$plugin" == "osprofiler" && "$OSPROFILER_DIRECTORY_PATH" != "" ]]; then
-        source $OSPROFILER_DIRECTORY_PATH/devstack/plugin.sh $mode $phase
+        if [[ -f $OSPROFILER_DIRECTORY_PATH/devstack/plugin.sh ]]; then
+          source $OSPROFILER_DIRECTORY_PATH/devstack/plugin.sh $mode $phase
+          continue
+        fi
       fi
-    elif [[ -f $dir/devstack/plugin.sh ]]; then
+    fi
+
+    if [[ -f $dir/devstack/plugin.sh ]]; then
       source $dir/devstack/plugin.sh $mode $phase
     fi
   done
