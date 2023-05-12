@@ -66,9 +66,8 @@ function neutron_plugin_create_nova_conf {
 }
 
 function neutron_plugin_install_agent_packages {
-    echo "[DEBUG][lib.neutron_plugins.cisco] neutron_plugin_install_agent_packages "
     # Cisco plugin uses openvswitch to operate in one of its configurations
-#    ovs_neutron_plugin_install_agent_packages
+    ovs_neutron_plugin_install_agent_packages
 }
 
 # Configure common parameters

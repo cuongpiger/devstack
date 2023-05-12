@@ -269,8 +269,8 @@ HORIZON_REPO=${HORIZON_REPO:-${GIT_BASE}/openstack/horizon.git}
 HORIZON_BRANCH=${HORIZON_BRANCH:-$TARGET_BRANCH}
 
 # unified auth system (manages accounts/tokens)
-KEYSTONE_REPO="https://github.com/cuongpiger/keystone.git"
-KEYSTONE_BRANCH="dev/zed"
+KEYSTONE_REPO=${KEYSTONE_REPO:-${GIT_BASE}/openstack/keystone.git}
+KEYSTONE_BRANCH=${KEYSTONE_BRANCH:-$TARGET_BRANCH}
 
 # neutron service
 NEUTRON_REPO=${NEUTRON_REPO:-${GIT_BASE}/openstack/neutron.git}
@@ -469,8 +469,8 @@ GITREPO["oslo.vmware"]=${OSLOVMWARE_REPO:-${GIT_BASE}/openstack/oslo.vmware.git}
 GITBRANCH["oslo.vmware"]=${OSLOVMWARE_BRANCH:-$TARGET_BRANCH}
 
 # osprofiler
-GITREPO["osprofiler"]="https://github.com/cuongpiger/osprofiler.git"
-GITBRANCH["osprofiler"]="dev/zed"
+GITREPO["osprofiler"]=${OSPROFILER_REPO:-${GIT_BASE}/openstack/osprofiler.git}
+GITBRANCH["osprofiler"]=${OSPROFILER_BRANCH:-$TARGET_BRANCH}
 
 # pycadf auditing library
 GITREPO["pycadf"]=${PYCADF_REPO:-${GIT_BASE}/openstack/pycadf.git}

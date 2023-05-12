@@ -727,7 +727,6 @@ function neutron_ml2_extension_driver_add {
 
 function install_neutron_agent_packages {
     if is_neutron_legacy_enabled; then
-      echo "[DEBUG][lib.neutron.install_neutron_agent_packages:$LINENO] is_neutron_legacy_enabled: $is_neutron_legacy_enabled and $@"
         # Call back to old function
         install_neutron_agent_packages_mutnauq "$@"
     else
