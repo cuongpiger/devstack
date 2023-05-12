@@ -56,6 +56,8 @@ KEYSTONE_PUBLIC_UWSGI=$KEYSTONE_BIN_DIR/keystone-wsgi-public
 # - uwsgi : Run keystone under uwsgi
 if [[ "$WSGI_MODE" == "uwsgi" ]]; then
   KEYSTONE_DEPLOY=uwsgi
+elif [[ "$WSGI_MODE" == "localhost" ]]; then
+  KEYSTONE_DEPLOY=localhost
 else
   KEYSTONE_DEPLOY=mod_wsgi
 fi
@@ -248,7 +250,7 @@ function configure_keystone {
   if [ "$KEYSTONE_DEPLOY" == "mod_wsgi" ]; then
     iniset $KEYSTONE_CONF DEFAULT logging_exception_prefix "%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s"
     _config_keystone_apache_wsgi
-  else                                                                                    # uwsgi
+  elif [ "$KEYSTONE_DEPLOY" == "uwsgi" ]; then  # uwsgi mode deploy
     write_uwsgi_config "$KEYSTONE_PUBLIC_UWSGI_CONF" "$KEYSTONE_PUBLIC_UWSGI" "/identity" # NOTE (cuongdm3): set for uwsgi, run this, this will create the file /etc/keystone/keystone-public-uwsgi.ini and /usr/local/bin/keystone-public-uwsgi with url is /identity
   fi
 
@@ -539,8 +541,11 @@ function install_keystone {
   if is_service_enabled ldap; then
     install_ldap
   fi
-
-  git_clone $KEYSTONE_REPO $KEYSTONE_DIR $KEYSTONE_BRANCH
+  if [[ "$KEYSTONE_DIRECTORY_PATH" == "" ]]; then
+    git_clone $KEYSTONE_REPO $KEYSTONE_DIR $KEYSTONE_BRANCH
+  else
+    KEYSTONE_DIR=$KEYSTONE_DIRECTORY_PATH
+  fi
   setup_develop $KEYSTONE_DIR
 
   if is_service_enabled ldap; then
