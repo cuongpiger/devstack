@@ -1610,7 +1610,7 @@ function _run_under_systemd {
   local env_vars="$5"
   if [[ "$command" =~ "uwsgi" ]]; then
     write_uwsgi_user_unit_file $systemd_service "$cmd" "$group" "$user" "$env_vars"
-  else
+  elif [[ "$command" =~ "mode_wsgi" ]]; then
     write_user_unit_file $systemd_service "$cmd" "$group" "$user" "$env_vars"
   fi
 
@@ -1669,6 +1669,23 @@ function stop_process {
       $SYSTEMCTL stop devstack@$service.service
       $SYSTEMCTL disable devstack@$service.service
     fi
+  fi
+}
+
+function is_process_running {
+  local service=$1
+  a=$($SYSTEMCTL is-active devstack@$service.service)
+  if [[ "$a" == "active" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function restart_process {
+  local service=$1
+  if is_service_enabled $service; then
+    $SYSTEMCTL restart devstack@$service.service
   fi
 }
 
@@ -1808,7 +1825,11 @@ function run_plugins {
   local plugin
   for plugin in ${plugins//,/ }; do
     local dir=${GITDIR[$plugin]}
-    if [[ -f $dir/devstack/plugin.sh ]]; then
+    if is_in_array "$plugin" "${OVERRIDE_PLUGINS[@]}"; then
+      if [[ "$plugin" == "osprofiler" && "$OSPROFILER_DIRECTORY_PATH" != "" ]]; then
+        source $OSPROFILER_DIRECTORY_PATH/devstack/plugin.sh $mode $phase
+      fi
+    elif [[ -f $dir/devstack/plugin.sh ]]; then
       source $dir/devstack/plugin.sh $mode $phase
     fi
   done

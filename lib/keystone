@@ -250,7 +250,7 @@ function configure_keystone {
   if [ "$KEYSTONE_DEPLOY" == "mod_wsgi" ]; then
     iniset $KEYSTONE_CONF DEFAULT logging_exception_prefix "%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s"
     _config_keystone_apache_wsgi
-  elif [ "$KEYSTONE_DEPLOY" == "uwsgi" ]; then  # uwsgi mode deploy
+  elif [ "$KEYSTONE_DEPLOY" == "uwsgi" ]; then                                            # uwsgi mode deploy
     write_uwsgi_config "$KEYSTONE_PUBLIC_UWSGI_CONF" "$KEYSTONE_PUBLIC_UWSGI" "/identity" # NOTE (cuongdm3): set for uwsgi, run this, this will create the file /etc/keystone/keystone-public-uwsgi.ini and /usr/local/bin/keystone-public-uwsgi with url is /identity
   fi
 
@@ -480,7 +480,7 @@ function configure_auth_token_middleware {
 
 # init_keystone() - Initialize databases, etc.
 function init_keystone {
-  if is_service_enabled ldap; then
+  if is_service_enabled ldap; then # NOTE (cuongdm3): this scope is not executed in this version
     init_ldap
   fi
 
@@ -491,6 +491,10 @@ function init_keystone {
 
   time_start "dbsync"
   # Initialize keystone database
+  if [[ "$CONDA_ENABLED" == "True" ]]; then
+    local conda_root=$(conda info --base)
+    KEYSTONE_BIN_DIR="${conda_root}/envs/${KEYSTONE_CONDA_ENV}/bin"
+  fi
   $KEYSTONE_BIN_DIR/keystone-manage --config-file $KEYSTONE_CONF db_sync
   time_stop "dbsync"
 
@@ -559,36 +563,38 @@ function install_keystone {
 
 # start_keystone() - Start running processes
 function start_keystone {
-  # Get right service port for testing
-  local service_port=$KEYSTONE_SERVICE_PORT
-  local auth_protocol=$KEYSTONE_SERVICE_PROTOCOL
-  if is_service_enabled tls-proxy; then
-    service_port=$KEYSTONE_SERVICE_PORT_INT
-    auth_protocol="http"
-  fi
+  if [[ "$WSGI_MODE" != "localhost" ]]; then
+    # Get right service port for testing
+    local service_port=$KEYSTONE_SERVICE_PORT
+    local auth_protocol=$KEYSTONE_SERVICE_PROTOCOL
+    if is_service_enabled tls-proxy; then
+      service_port=$KEYSTONE_SERVICE_PORT_INT
+      auth_protocol="http"
+    fi
 
-  if [ "$KEYSTONE_DEPLOY" == "mod_wsgi" ]; then
-    enable_apache_site keystone
-    restart_apache_server
-  else # uwsgi
-    run_process keystone "$(which uwsgi) --procname-prefix keystone --ini $KEYSTONE_PUBLIC_UWSGI_CONF" ""
-  fi
+    if [ "$KEYSTONE_DEPLOY" == "mod_wsgi" ]; then
+      enable_apache_site keystone
+      restart_apache_server
+    else # uwsgi
+      run_process keystone "$(which uwsgi) --procname-prefix keystone --ini $KEYSTONE_PUBLIC_UWSGI_CONF" ""
+    fi
 
-  echo "Waiting for keystone to start..."
-  # Check that the keystone service is running. Even if the tls tunnel
-  # should be enabled, make sure the internal port is checked using
-  # unencryted traffic at this point.
-  # If running in Apache, use the path rather than port.
+    echo "Waiting for keystone to start..."
+    # Check that the keystone service is running. Even if the tls tunnel
+    # should be enabled, make sure the internal port is checked using
+    # unencryted traffic at this point.
+    # If running in Apache, use the path rather than port.
 
-  local service_uri=$auth_protocol://$KEYSTONE_SERVICE_HOST/identity/v3/
+    local service_uri=$auth_protocol://$KEYSTONE_SERVICE_HOST/identity/v3/
 
-  if ! wait_for_service $SERVICE_TIMEOUT $service_uri; then
-    die $LINENO "keystone did not start"
-  fi
+    if ! wait_for_service $SERVICE_TIMEOUT $service_uri; then
+      die $LINENO "keystone did not start"
+    fi
 
-  # Start proxies if enabled
-  if is_service_enabled tls-proxy; then
-    start_tls_proxy keystone-service '*' $KEYSTONE_SERVICE_PORT $KEYSTONE_SERVICE_HOST $KEYSTONE_SERVICE_PORT_INT
+    # Start proxies if enabled
+    if is_service_enabled tls-proxy; then
+      start_tls_proxy keystone-service '*' $KEYSTONE_SERVICE_PORT $KEYSTONE_SERVICE_HOST $KEYSTONE_SERVICE_PORT_INT
+    fi
   fi
 
   # (re)start memcached to make sure we have a clean memcache.
