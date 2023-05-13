@@ -235,6 +235,7 @@ function trueorfalse {
   $xtrace
 }
 
+# `isset` checks if a variable has been set or not, returns 0 if set, 1 if not
 function isset {
   [[ -v "$1" ]]
 }
@@ -442,22 +443,21 @@ function GetOSVersion {
 # Sets global ``DISTRO`` from the ``os_*`` values
 declare -g DISTRO
 
+# `GetDistro` finds the distribution name that your machine has been installed with, and set the `DISTRO` variable and
+# then export it to be used by all scripts
 function GetDistro {
-  GetOSVersion
+  GetOSVersion # sets os_VENDOR, os_RELEASE, os_PACKAGE, os_CODENAME
   if [[ "$os_VENDOR" =~ (Ubuntu) || "$os_VENDOR" =~ (Debian) ]]; then
-    # 'Everyone' refers to Ubuntu / Debian releases by
-    # the code name adjective
-    DISTRO=$os_CODENAME
+    # everyone refers to Ubuntu / Debian releases by the code name adjective
+    DISTRO=$os_CODENAME # ex: jammy
   elif [[ "$os_VENDOR" =~ (Fedora) ]]; then
-    # For Fedora, just use 'f' and the release
+    # for Fedora, just use 'f' and the release
     DISTRO="f$os_RELEASE"
   elif is_opensuse; then
     DISTRO="opensuse-$os_RELEASE"
-    # Tumbleweed uses "n/a" as a codename, and the release is a datestring
-    # like 20180218, so not very useful. Leap however uses a release
-    # with a "dot", so for example 15.0
-    [ "$os_CODENAME" = "n/a" -a "$os_RELEASE" = "${os_RELEASE/\./}" ] &&
-      DISTRO="opensuse-tumbleweed"
+    # Tumbleweed uses "n/a" as a codename, and the release is a datestring like 20180218, so not very useful.
+    # leap however uses a release with a "dot", so for example 15.0
+    [ "$os_CODENAME" = "n/a" -a "$os_RELEASE" = "${os_RELEASE/\./}" ] && DISTRO="opensuse-tumbleweed"
   elif is_suse_linux_enterprise; then
     # just use major release
     DISTRO="sle${os_RELEASE%.*}"
@@ -467,32 +467,26 @@ function GetDistro {
     "$os_VENDOR" =~ (Scientific) ||
     "$os_VENDOR" =~ (OracleServer) ||
     "$os_VENDOR" =~ (Virtuozzo) ]]; then
-    # Drop the . release as we assume it's compatible
-    # XXX re-evaluate when we get RHEL10
+    # drop the . release as we assume it's compatible, XXX re-evaluate when we get RHEL10
     DISTRO="rhel${os_RELEASE::1}"
   else
-    # We can't make a good choice here.  Setting a sensible DISTRO
-    # is part of the problem, but not the major issue -- we really
-    # only use DISTRO in the code as a fine-filter.
+    # We can't make a good choice here.  Setting a sensible DISTRO is part of the problem, but not the major issue. We
+    # really only use DISTRO in the code as a fine-filter.
     #
-    # The bigger problem is categorising the system into one of
-    # our two big categories as Ubuntu/Debian-ish or
+    # The bigger problem is categorising the system into one of our two big categories as Ubuntu/Debian-ish or
     # Fedora/CentOS-ish.
     #
-    # The setting of os_PACKAGE above is only set to "deb" based
-    # on a hard-coded list of vendor names ... thus we will
-    # default to thinking unknown distros are RPM based
-    # (ie. is_ubuntu does not match).  But the platform will then
-    # also not match in is_fedora, because that also has a list of
-    # names.
+    # The setting of os_PACKAGE above is only set to "deb" based on a hard-coded list of vendor names ... thus we will
+    # default to thinking unknown distros are RPM based (ie. is_ubuntu does not match). But the platform will then also
+    # not match in is_fedora, because that also has a list of names.
     #
-    # So, if you are reading this, getting your distro supported
-    # is really about making sure it matches correctly in these
-    # functions.  Then you can choose a sensible way to construct
-    # DISTRO based on your distros release approach.
+    # So, if you are reading this, getting your distro supported is really about making sure it matches correctly in
+    # these functions.  Then you can choose a sensible way to construct DISTRO based on your distros release approach.
     die $LINENO "Unable to determine DISTRO, can not continue."
   fi
-  typeset -xr DISTRO
+
+  # if everything went well, set the DISTRO variable as read-only and export it
+  typeset -xr DISTRO # ex: jammy
 }
 
 # Utility function for checking machine architecture
@@ -1458,8 +1452,7 @@ function install_package {
   fi
 }
 
-# Distro-agnostic function to tell if a package is installed
-# is_package_installed package [package ...]
+# Distro-agnostic function to tell if a package is installed is_package_installed package [package ...]
 function is_package_installed {
   if [[ -z "$@" ]]; then
     return 1
@@ -1943,11 +1936,10 @@ function disable_all_services {
   ENABLED_SERVICES=""
 }
 
-# Remove all services starting with '-'.  For example, to install all default
-# services except rabbit (rabbit) set in ``localrc``:
+# Remove all services starting with '-'.  For example, to install all default services except rabbit (rabbit) set in
+# `localrc`:
 # ENABLED_SERVICES+=",-rabbit"
-# Uses global ``ENABLED_SERVICES``
-# disable_negated_services
+# Uses global `ENABLED_SERVICES` disable_negated_services
 function disable_negated_services {
   local xtrace
   xtrace=$(set +o | grep xtrace)
@@ -2085,8 +2077,7 @@ function is_service_enabled {
   return $enabled
 }
 
-# remove specified list from the input string
-# remove_disabled_services service-list remove-list
+# Remove specified list from the input string, remove_disabled_services service-list remove-list
 function remove_disabled_services {
   local xtrace
   xtrace=$(set +o | grep xtrace)
@@ -2234,14 +2225,10 @@ function cp_it {
   fi
 }
 
-# HTTP and HTTPS proxy servers are supported via the usual environment variables [1]
-# ``http_proxy``, ``https_proxy`` and ``no_proxy``. They can be set in
-# ``localrc`` or on the command line if necessary::
-#
+# HTTP and HTTPS proxy servers are supported via the usual environment variables [1] `http_proxy`, `https_proxy` and
+# `no_proxy`. They can be set in `localrc` or on the command line if necessary:
 # [1] http://www.w3.org/Daemon/User/Proxies/ProxyClients.html
-#
-#     http_proxy=http://proxy.example.com:3128/ no_proxy=repo.example.net ./stack.sh
-
+# For example CLI: http_proxy=http://proxy.example.com:3128/ no_proxy=repo.example.net ./stack.sh
 function export_proxy_variables {
   if isset http_proxy; then
     export http_proxy=$http_proxy
@@ -2539,6 +2526,10 @@ function clean_pyc_files {
   if [[ -n "$DEST" ]] && [[ -d "$DEST" ]]; then
     sudo find $DEST -name "*.pyc" -delete
   fi
+}
+
+function is_equal_to {
+  [[ $1 == $2 ]]
 }
 
 # Restore xtrace

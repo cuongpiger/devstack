@@ -14,7 +14,6 @@
 INC_PY_TRACE=$(set +o | grep xtrace)
 set +o xtrace
 
-
 # Global Config Variables
 
 # PROJECT_VENV contains the name of the virtual environment for each
@@ -26,8 +25,8 @@ declare -A -g PROJECT_VENV
 
 # Joins bash array of extras with commas as expected by other functions
 function join_extras {
-    local IFS=","
-    echo "$*"
+  local IFS=","
+  echo "$*"
 }
 
 # Python Functions
@@ -36,34 +35,34 @@ function join_extras {
 # Get the path to the pip command.
 # get_pip_command
 function get_pip_command {
-    local version="$1"
-    if [ -z "$version" ]; then
-        die $LINENO "pip python version is not set."
-    fi
+  local version="$1"
+  if [ -z "$version" ]; then
+    die $LINENO "pip python version is not set."
+  fi
 
-    # NOTE(dhellmann): I don't know if we actually get a pip3.4-python
-    # under any circumstances.
-    which pip${version} || which pip${version}-python
+  # NOTE(dhellmann): I don't know if we actually get a pip3.4-python
+  # under any circumstances.
+  which pip${version} || which pip${version}-python
 
-    if [ $? -ne 0 ]; then
-        die $LINENO "Unable to find pip${version}; cannot continue"
-    fi
+  if [ $? -ne 0 ]; then
+    die $LINENO "Unable to find pip${version}; cannot continue"
+  fi
 }
 
 # Get the path to the directory where python executables are installed.
 # get_python_exec_prefix
 function get_python_exec_prefix {
-    local xtrace
-    xtrace=$(set +o | grep xtrace)
-    set +o xtrace
-    if [[ -z "$os_PACKAGE" ]]; then
-        GetOSVersion
-    fi
-    $xtrace
+  local xtrace
+  xtrace=$(set +o | grep xtrace)
+  set +o xtrace
+  if [[ -z "$os_PACKAGE" ]]; then
+    GetOSVersion
+  fi
+  $xtrace
 
-    local PYTHON_PATH=/usr/local/bin
-    is_suse && PYTHON_PATH=/usr/bin
-    echo $PYTHON_PATH
+  local PYTHON_PATH=/usr/local/bin
+  is_suse && PYTHON_PATH=/usr/bin
+  echo $PYTHON_PATH
 }
 
 # Wrapper for ``pip install`` that only installs versions of libraries
@@ -73,10 +72,10 @@ function get_python_exec_prefix {
 #
 # pip_install_gr packagename
 function pip_install_gr {
-    local name=$1
-    local clean_name
-    clean_name=$(get_from_global_requirements $name)
-    pip_install $clean_name
+  local name=$1
+  local clean_name
+  clean_name=$(get_from_global_requirements $name)
+  pip_install $clean_name
 }
 
 # Wrapper for ``pip install`` that only installs versions of libraries
@@ -86,37 +85,37 @@ function pip_install_gr {
 #
 # pip_install_gr_extras packagename extra1,extra2,...
 function pip_install_gr_extras {
-    local name=$1
-    local extras=$2
-    local version_constraints
-    version_constraints=$(get_version_constraints_from_global_requirements $name)
-    pip_install $name[$extras]$version_constraints
+  local name=$1
+  local extras=$2
+  local version_constraints
+  version_constraints=$(get_version_constraints_from_global_requirements $name)
+  pip_install $name[$extras]$version_constraints
 }
 
 # enable_python3_package() -- no-op for backwards compatibility
 #
 # enable_python3_package dir [dir ...]
 function enable_python3_package {
-    local xtrace
-    xtrace=$(set +o | grep xtrace)
-    set +o xtrace
+  local xtrace
+  xtrace=$(set +o | grep xtrace)
+  set +o xtrace
 
-    echo "It is no longer necessary to call enable_python3_package()."
+  echo "It is no longer necessary to call enable_python3_package()."
 
-    $xtrace
+  $xtrace
 }
 
 # disable_python3_package() -- no-op for backwards compatibility
 #
 # disable_python3_package dir [dir ...]
 function disable_python3_package {
-    local xtrace
-    xtrace=$(set +o | grep xtrace)
-    set +o xtrace
+  local xtrace
+  xtrace=$(set +o | grep xtrace)
+  set +o xtrace
 
-    echo "It is no longer possible to call disable_python3_package()."
+  echo "It is no longer possible to call disable_python3_package()."
 
-    $xtrace
+  $xtrace
 }
 
 # Wrapper for ``pip install`` to set cache and proxy environment variables
@@ -125,150 +124,150 @@ function disable_python3_package {
 # Usage:
 #  pip_install pip_arguments
 function pip_install {
-    local xtrace result
-    xtrace=$(set +o | grep xtrace)
-    set +o xtrace
-    local upgrade=""
-    local offline=${OFFLINE:-False}
-    if [[ "$offline" == "True" || -z "$@" ]]; then
-        $xtrace
-        return
-    fi
-
-    time_start "pip_install"
-
-    PIP_UPGRADE=$(trueorfalse False PIP_UPGRADE)
-    if [[ "$PIP_UPGRADE" = "True" ]] ; then
-        upgrade="--upgrade"
-    fi
-
-    if [[ -z "$os_PACKAGE" ]]; then
-        GetOSVersion
-    fi
-
-    # Try to extract the path of the package we are installing into
-    # package_dir.  We need this to check for test-requirements.txt,
-    # at least.
-    #
-    # ${!#} expands to the last positional argument to this function.
-    # With "extras" syntax included, our arguments might be something
-    # like:
-    #  -e /path/to/fooproject[extra]
-    # Thus this magic line grabs just the path without extras
-    #
-    # Note that this makes no sense if this is a pypi (rather than
-    # local path) install; ergo you must check this path exists before
-    # use.  Also, if we had multiple or mixed installs, we would also
-    # likely break.  But for historical reasons, it's basically only
-    # the other wrapper functions in here calling this to install
-    # local packages, and they do so with single call per install.  So
-    # this works (for now...)
-    local package_dir=${!#%\[*\]}
-
-    if [[ -n ${PIP_VIRTUAL_ENV:=} && -d ${PIP_VIRTUAL_ENV} ]]; then
-        local cmd_pip=$PIP_VIRTUAL_ENV/bin/pip
-        local sudo_pip="env"
-    else
-        local cmd_pip="python$PYTHON3_VERSION -m pip"
-        # See
-        #  https://github.com/pypa/setuptools/issues/2232
-        #  http://lists.openstack.org/pipermail/openstack-discuss/2020-August/016905.html
-        # this makes setuptools >=50 use the platform distutils.
-        # We only want to do this on global pip installs, not if
-        # installing in a virtualenv
-        local sudo_pip="sudo -H LC_ALL=en_US.UTF-8 SETUPTOOLS_USE_DISTUTILS=stdlib "
-        echo "Using python $PYTHON3_VERSION to install $package_dir"
-    fi
-
-    cmd_pip="$cmd_pip install"
-    # Always apply constraints
-    cmd_pip="$cmd_pip -c $REQUIREMENTS_DIR/upper-constraints.txt"
-
+  local xtrace result
+  xtrace=$(set +o | grep xtrace)
+  set +o xtrace
+  local upgrade=""
+  local offline=${OFFLINE:-False}
+  if [[ "$offline" == "True" || -z "$@" ]]; then
     $xtrace
+    return
+  fi
 
-    $sudo_pip \
-        http_proxy="${http_proxy:-}" \
-        https_proxy="${https_proxy:-}" \
-        no_proxy="${no_proxy:-}" \
-        PIP_FIND_LINKS=$PIP_FIND_LINKS \
-        $cmd_pip $upgrade \
-        $@
-    result=$?
+  time_start "pip_install"
 
-    time_stop "pip_install"
-    return $result
+  PIP_UPGRADE=$(trueorfalse False PIP_UPGRADE)
+  if [[ "$PIP_UPGRADE" = "True" ]]; then
+    upgrade="--upgrade"
+  fi
+
+  if [[ -z "$os_PACKAGE" ]]; then
+    GetOSVersion
+  fi
+
+  # Try to extract the path of the package we are installing into
+  # package_dir.  We need this to check for test-requirements.txt,
+  # at least.
+  #
+  # ${!#} expands to the last positional argument to this function.
+  # With "extras" syntax included, our arguments might be something
+  # like:
+  #  -e /path/to/fooproject[extra]
+  # Thus this magic line grabs just the path without extras
+  #
+  # Note that this makes no sense if this is a pypi (rather than
+  # local path) install; ergo you must check this path exists before
+  # use.  Also, if we had multiple or mixed installs, we would also
+  # likely break.  But for historical reasons, it's basically only
+  # the other wrapper functions in here calling this to install
+  # local packages, and they do so with single call per install.  So
+  # this works (for now...)
+  local package_dir=${!#%\[*\]}
+
+  if [[ -n ${PIP_VIRTUAL_ENV:=} && -d ${PIP_VIRTUAL_ENV} ]]; then
+    local cmd_pip=$PIP_VIRTUAL_ENV/bin/pip
+    local sudo_pip="env"
+  else
+    local cmd_pip="python$PYTHON3_VERSION -m pip"
+    # See
+    #  https://github.com/pypa/setuptools/issues/2232
+    #  http://lists.openstack.org/pipermail/openstack-discuss/2020-August/016905.html
+    # this makes setuptools >=50 use the platform distutils.
+    # We only want to do this on global pip installs, not if
+    # installing in a virtualenv
+    local sudo_pip="sudo -H LC_ALL=en_US.UTF-8 SETUPTOOLS_USE_DISTUTILS=stdlib "
+    echo "Using python $PYTHON3_VERSION to install $package_dir"
+  fi
+
+  cmd_pip="$cmd_pip install"
+  # Always apply constraints
+  cmd_pip="$cmd_pip -c $REQUIREMENTS_DIR/upper-constraints.txt"
+
+  $xtrace
+
+  $sudo_pip \
+    http_proxy="${http_proxy:-}" \
+    https_proxy="${https_proxy:-}" \
+    no_proxy="${no_proxy:-}" \
+    PIP_FIND_LINKS=$PIP_FIND_LINKS \
+    $cmd_pip $upgrade \
+    $@
+  result=$?
+
+  time_stop "pip_install"
+  return $result
 }
 
 function pip_uninstall {
-    # Skip uninstall if offline
-    [[ "${OFFLINE}" = "True" ]] && return
+  # Skip uninstall if offline
+  [[ "${OFFLINE}" = "True" ]] && return
 
-    local name=$1
-    if [[ -n ${PIP_VIRTUAL_ENV:=} && -d ${PIP_VIRTUAL_ENV} ]]; then
-        local cmd_pip=$PIP_VIRTUAL_ENV/bin/pip
-        local sudo_pip="env"
-    else
-        local cmd_pip="python$PYTHON3_VERSION -m pip"
-        local sudo_pip="sudo -H LC_ALL=en_US.UTF-8"
-    fi
-    # don't error if we can't uninstall, it might not be there
-    $sudo_pip $cmd_pip uninstall -y $name || /bin/true
+  local name=$1
+  if [[ -n ${PIP_VIRTUAL_ENV:=} && -d ${PIP_VIRTUAL_ENV} ]]; then
+    local cmd_pip=$PIP_VIRTUAL_ENV/bin/pip
+    local sudo_pip="env"
+  else
+    local cmd_pip="python$PYTHON3_VERSION -m pip"
+    local sudo_pip="sudo -H LC_ALL=en_US.UTF-8"
+  fi
+  # don't error if we can't uninstall, it might not be there
+  $sudo_pip $cmd_pip uninstall -y $name || /bin/true
 }
 
 # get version of a package from global requirements file
 # get_from_global_requirements <package>
 function get_from_global_requirements {
-    local package=$1
-    local required_pkg
-    required_pkg=$(grep -i -h ^${package} $REQUIREMENTS_DIR/global-requirements.txt | cut -d\# -f1)
-    if [[ $required_pkg == ""  ]]; then
-        die $LINENO "Can't find package $package in requirements"
-    fi
-    echo $required_pkg
+  local package=$1
+  local required_pkg
+  required_pkg=$(grep -i -h ^${package} $REQUIREMENTS_DIR/global-requirements.txt | cut -d\# -f1)
+  if [[ $required_pkg == "" ]]; then
+    die $LINENO "Can't find package $package in requirements"
+  fi
+  echo $required_pkg
 }
 
 # get only version constraints of a package from global requirements file
 # get_version_constraints_from_global_requirements <package>
 function get_version_constraints_from_global_requirements {
-    local package=$1
-    local required_pkg_version_constraint
-    # drop the package name from output (\K)
-    required_pkg_version_constraint=$(grep -i -h -o -P "^${package}\K.*" $REQUIREMENTS_DIR/global-requirements.txt | cut -d\# -f1)
-    if [[ $required_pkg_version_constraint == ""  ]]; then
-        die $LINENO "Can't find package $package in requirements"
-    fi
-    echo $required_pkg_version_constraint
+  local package=$1
+  local required_pkg_version_constraint
+  # drop the package name from output (\K)
+  required_pkg_version_constraint=$(grep -i -h -o -P "^${package}\K.*" $REQUIREMENTS_DIR/global-requirements.txt | cut -d\# -f1)
+  if [[ $required_pkg_version_constraint == "" ]]; then
+    die $LINENO "Can't find package $package in requirements"
+  fi
+  echo $required_pkg_version_constraint
 }
 
 # should we use this library from their git repo, or should we let it
 # get pulled in via pip dependencies.
 function use_library_from_git {
-    local name=$1
-    local enabled=1
-    [[ ${LIBS_FROM_GIT} = 'ALL' ]] || [[ ,${LIBS_FROM_GIT}, =~ ,${name}, ]] && enabled=0
-    return $enabled
+  local name=$1
+  local enabled=1
+  [[ ${LIBS_FROM_GIT} = 'ALL' ]] || [[ ,${LIBS_FROM_GIT}, =~ ,${name}, ]] && enabled=0
+  return $enabled
 }
 
 # determine if a package was installed from git
 function lib_installed_from_git {
-    local name=$1
-    local safe_name
-    safe_name=$(python -c "from pkg_resources import safe_name; \
+  local name=$1
+  local safe_name
+  safe_name=$(python -c "from pkg_resources import safe_name; \
         print(safe_name('${name}'))")
-    # Note "pip freeze" doesn't always work here, because it tries to
-    # be smart about finding the remote of the git repo the package
-    # was installed from.  This doesn't work with zuul which clones
-    # repos with no remote.
-    #
-    # The best option seems to be to use "pip list" which will tell
-    # you the path an editable install was installed from; for example
-    # in response to something like
-    #  pip install -e 'git+https://opendev.org/openstack/bashate#egg=bashate'
-    # pip list --format columns shows
-    #  bashate 0.5.2.dev19 /tmp/env/src/bashate
-    # Thus we check the third column to see if we're installed from
-    # some local place.
-    [[ -n $(pip list --format=columns 2>/dev/null | awk "/^$safe_name/ {print \$3}") ]]
+  # Note "pip freeze" doesn't always work here, because it tries to
+  # be smart about finding the remote of the git repo the package
+  # was installed from.  This doesn't work with zuul which clones
+  # repos with no remote.
+  #
+  # The best option seems to be to use "pip list" which will tell
+  # you the path an editable install was installed from; for example
+  # in response to something like
+  #  pip install -e 'git+https://opendev.org/openstack/bashate#egg=bashate'
+  # pip list --format columns shows
+  #  bashate 0.5.2.dev19 /tmp/env/src/bashate
+  # Thus we check the third column to see if we're installed from
+  # some local place.
+  [[ -n $(pip list --format=columns 2>/dev/null | awk "/^$safe_name/ {print \$3}") ]]
 }
 
 # setup a library by name. If we are trying to use the library from
@@ -276,9 +275,9 @@ function lib_installed_from_git {
 # library should be installed by a requirements pull from another
 # project.
 function setup_lib {
-    local name=$1
-    local dir=${GITDIR[$name]}
-    setup_install $dir
+  local name=$1
+  local dir=${GITDIR[$name]}
+  setup_install $dir
 }
 
 # setup a library by name in editable mode. If we are trying to use
@@ -290,15 +289,15 @@ function setup_lib {
 #
 # setup_dev_lib [-bindep] <name> [<extras>]
 function setup_dev_lib {
-    local bindep
-    if [[ $1 == -bindep* ]]; then
-        bindep="${1}"
-        shift
-    fi
-    local name=$1
-    local dir=${GITDIR[$name]}
-    local extras=$2
-    setup_develop $bindep $dir $extras
+  local bindep
+  if [[ $1 == -bindep* ]]; then
+    bindep="${1}"
+    shift
+  fi
+  local name=$1
+  local dir=${GITDIR[$name]}
+  local extras=$2
+  setup_develop $bindep $dir $extras
 }
 
 # this should be used if you want to install globally, all libraries should
@@ -312,14 +311,14 @@ function setup_dev_lib {
 # bindep: Set "-bindep" as first argument to install bindep.txt packages
 # The command is like "pip install <project_dir>[<extras>]"
 function setup_install {
-    local bindep
-    if [[ $1 == -bindep* ]]; then
-        bindep="${1}"
-        shift
-    fi
-    local project_dir=$1
-    local extras=$2
-    _setup_package_with_constraints_edit $bindep $project_dir "" $extras
+  local bindep
+  if [[ $1 == -bindep* ]]; then
+    bindep="${1}"
+    shift
+  fi
+  local project_dir=$1
+  local extras=$2
+  _setup_package_with_constraints_edit $bindep $project_dir "" $extras
 }
 
 # this should be used for projects which run services, like all services
@@ -331,14 +330,14 @@ function setup_install {
 #         See https://docs.openstack.org/pbr/latest/user/using.html#extra-requirements
 # The command is like "pip install -e <project_dir>[<extras>]"
 function setup_develop {
-    local bindep
-    if [[ $1 == -bindep* ]]; then
-        bindep="${1}"
-        shift
-    fi
-    local project_dir=$1
-    local extras=$2
-    _setup_package_with_constraints_edit $bindep $project_dir -e $extras
+  local bindep
+  if [[ $1 == -bindep* ]]; then
+    bindep="${1}"
+    shift
+  fi
+  local project_dir=$1
+  local extras=$2
+  _setup_package_with_constraints_edit $bindep $project_dir -e $extras
 }
 
 # ``pip install -e`` the package, which processes the dependencies
@@ -357,41 +356,41 @@ function setup_develop {
 #         See https://docs.openstack.org/pbr/latest/user/using.html#extra-requirements
 # The command is like "pip install <flags> <project_dir>[<extras>]"
 function _setup_package_with_constraints_edit {
-    local bindep
-    if [[ $1 == -bindep* ]]; then
-        bindep="${1}"
-        shift
+  local bindep
+  if [[ $1 == -bindep* ]]; then
+    bindep="${1}"
+    shift
+  fi
+  local project_dir=$1
+  local flags=$2
+  local extras=$3
+
+  # Normalize the directory name to avoid
+  # "installation from path or url cannot be constrained to a version"
+  # error.
+  # REVISIT(yamamoto): Remove this when fixed in pip.
+  # https://github.com/pypa/pip/pull/3582
+  project_dir=$(cd $project_dir && pwd)
+
+  if [ -n "$REQUIREMENTS_DIR" ]; then
+    # Remove this package from constraints before we install it.
+    # That way, later installs won't "downgrade" the install from
+    # source we are about to do.
+    local name
+    name=$(awk '/^name.*=/ {print $3}' $project_dir/setup.cfg)
+    $REQUIREMENTS_DIR/.venv/bin/edit-constraints \
+      $REQUIREMENTS_DIR/upper-constraints.txt -- $name
+  fi
+
+  setup_package $bindep $project_dir "$flags" $extras
+
+  # If this project is in LIBS_FROM_GIT, verify it was actually installed
+  # correctly.  This helps catch errors caused by constraints mismatches.
+  if use_library_from_git "$project_dir"; then
+    if ! lib_installed_from_git "$project_dir"; then
+      die $LINENO "The following LIBS_FROM_GIT was not installed correctly: $project_dir"
     fi
-    local project_dir=$1
-    local flags=$2
-    local extras=$3
-
-    # Normalize the directory name to avoid
-    # "installation from path or url cannot be constrained to a version"
-    # error.
-    # REVISIT(yamamoto): Remove this when fixed in pip.
-    # https://github.com/pypa/pip/pull/3582
-    project_dir=$(cd $project_dir && pwd)
-
-    if [ -n "$REQUIREMENTS_DIR" ]; then
-        # Remove this package from constraints before we install it.
-        # That way, later installs won't "downgrade" the install from
-        # source we are about to do.
-        local name
-        name=$(awk '/^name.*=/ {print $3}' $project_dir/setup.cfg)
-        $REQUIREMENTS_DIR/.venv/bin/edit-constraints \
-            $REQUIREMENTS_DIR/upper-constraints.txt -- $name
-    fi
-
-    setup_package $bindep $project_dir "$flags" $extras
-
-    # If this project is in LIBS_FROM_GIT, verify it was actually installed
-    # correctly.  This helps catch errors caused by constraints mismatches.
-    if use_library_from_git "$project_dir"; then
-        if ! lib_installed_from_git "$project_dir"; then
-            die $LINENO "The following LIBS_FROM_GIT was not installed correctly: $project_dir"
-        fi
-    fi
+  fi
 }
 
 # ``pip install -e`` the package, which processes the dependencies
@@ -411,73 +410,121 @@ function _setup_package_with_constraints_edit {
 #               (e.g., ldap,memcache).
 #               See https://docs.openstack.org/pbr/latest/user/using.html#extra-requirements
 function setup_package {
-    local bindep=0
-    local bindep_flag=""
-    local bindep_profiles=""
-    if [[ $1 == -bindep* ]]; then
-        bindep=1
-        IFS="=" read bindep_flag bindep_profiles <<< ${1}
-        shift
-    fi
-    local project_dir=$1
-    local flags=$2
-    local extras=$3
+  local bindep=0
+  local bindep_flag=""
+  local bindep_profiles=""
+  if [[ $1 == -bindep* ]]; then
+    bindep=1
+    IFS="=" read bindep_flag bindep_profiles <<<${1}
+    shift
+  fi
+  local project_dir=$1
+  local flags=$2
+  local extras=$3
 
-    # if the flags variable exists, and it doesn't look like a flag,
-    # assume it's actually the extras list.
-    if [[ -n "$flags" && -z "$extras" && ! "$flags" =~ ^-.* ]]; then
-        extras=$flags
-        flags=""
-    fi
+  # if the flags variable exists, and it doesn't look like a flag,
+  # assume it's actually the extras list.
+  if [[ -n "$flags" && -z "$extras" && ! "$flags" =~ ^-.* ]]; then
+    extras=$flags
+    flags=""
+  fi
 
-    if [[ ! -z "$extras" ]]; then
-        extras="[$extras]"
-    fi
+  if [[ ! -z "$extras" ]]; then
+    extras="[$extras]"
+  fi
 
-    # install any bindep packages
-    if [[ $bindep == 1 ]]; then
-        install_bindep $project_dir/bindep.txt $bindep_profiles
-    fi
+  # install any bindep packages
+  if [[ $bindep == 1 ]]; then
+    install_bindep $project_dir/bindep.txt $bindep_profiles
+  fi
 
-    pip_install $flags "$project_dir$extras"
-    # ensure that further actions can do things like setup.py sdist
-    if [[ "$flags" == "-e" ]]; then
-        safe_chown -R $STACK_USER $1/*.egg-info
-    fi
+  pip_install $flags "$project_dir$extras"
+  # ensure that further actions can do things like setup.py sdist
+  if [[ "$flags" == "-e" ]]; then
+    safe_chown -R $STACK_USER $1/*.egg-info
+  fi
 }
 
 # Report whether python 3 should be used
 # TODO(frickler): drop this once all legacy uses are removed
 function python3_enabled {
-    return 0
+  return 0
 }
 
 # Provide requested python version and sets PYTHON variable
 function install_python {
+  if is_equal_to $CONDA_ENABLED True; then
+    conda_setup_env
+  else
     install_python3
     export PYTHON=$(which python${PYTHON3_VERSION} 2>/dev/null)
+  fi
+}
+
+function conda_setup_env {
+  if ! check_conda_installed; then
+    die $LINENO "Conda is not installed"
+  fi
+
+  if ! check_conda_env_exists $CONDA_ENV_NAME; then
+    conda create -y -n $CONDA_ENV_NAME python=$CONDA_PYTHON_VERSION pip
+    if [ $? -eq 0 ]; then
+      :
+    else
+      die $LINENO "Failed to create conda environment $CONDA_ENV_NAME"
+    fi
+  fi
+  conda_set_python_command  # update the PYTHON variable
+}
+
+function conda_set_python_command {
+  local env_path="$(conda info --envs | awk -v name="$CONDA_ENV_NAME" '$1 == name {print $NF}')/bin/python"
+  export PYTHON=$env_path
+}
+
+function check_conda_installed {
+  if ! command -v conda >/dev/null 2>&1; then
+    # conda is not installed
+    return 1
+  else
+    return 0
+  fi
+}
+
+function check_conda_env_exists {
+  local env_name="$1"
+  if is_equal_to "$env_name" ""; then
+    die $LINENO "Conda environment name is not specified"
+  fi
+
+  if conda env list | grep -q "$env_name"; then
+    # this env exists
+    return 0
+  else
+    return 1
+  fi
 }
 
 # Install python3 packages
 function install_python3 {
-    if is_ubuntu; then
-        apt_get install python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev
-    elif is_suse; then
-        install_package python3-devel python3-dbm
-    elif is_fedora; then
-        if [ "$os_VENDOR" = "Fedora" ]; then
-            install_package python${PYTHON3_VERSION//.}
-        else
-            install_package python${PYTHON3_VERSION//.} python${PYTHON3_VERSION//.}-devel
-        fi
+  if is_ubuntu; then
+    apt_get install python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev
+  elif is_suse; then
+    install_package python3-devel python3-dbm
+  elif is_fedora; then
+    if [ "$os_VENDOR" = "Fedora" ]; then
+      install_package python${PYTHON3_VERSION//./}
+    else
+      install_package python${PYTHON3_VERSION//./} python${PYTHON3_VERSION//./}-devel
     fi
+  fi
 }
 
 function install_devstack_tools {
-    # intentionally old to ensure devstack-gate has control
-    local dstools_version=${DSTOOLS_VERSION:-0.1.2}
-    install_python3
-    sudo pip3 install -U devstack-tools==${dstools_version}
+  # intentionally old to ensure devstack-gate has control
+  local dstools_version=${DSTOOLS_VERSION:-0.1.2}
+  install_python3
+  sudo pip3 install -U devstack-tools==${dstools_version}
 }
 
 # Restore xtrace

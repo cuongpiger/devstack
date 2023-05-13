@@ -850,9 +850,7 @@ function get_random_port {
   echo $port
 }
 
-# Save some state information
-#
-# Write out various useful state information to /etc/devstack-version
+# `write_devstack_version` writes out various useful state information to /etc/devstack-version
 function write_devstack_version {
   cat - <<EOF | sudo tee /etc/devstack-version >/dev/null
 DevStack Version: ${DEVSTACK_SERIES}
