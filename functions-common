@@ -1737,6 +1737,7 @@ DEVSTACK_PLUGINS=${DEVSTACK_PLUGINS:-""}
 # ``url`` is a git url
 # ``branch`` is a gitref. If it's not set, defaults to master
 function enable_plugin {
+  echo "Enabling plugin $1 for $DEST"
   local name=$1
   local url=$2
   local branch=${3:-master}
@@ -1767,6 +1768,7 @@ function is_plugin_enabled {
 # clones all plugins
 function fetch_plugins {
   local plugins="${DEVSTACK_PLUGINS}"
+  echo "Fetching DevStack plugins: $plugins"
   local plugin
 
   # short circuit if nothing to do

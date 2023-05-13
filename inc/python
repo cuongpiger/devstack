@@ -474,7 +474,7 @@ function conda_setup_env {
       die $LINENO "Failed to create conda environment $CONDA_ENV_NAME"
     fi
   fi
-  conda_set_python_command  # update the PYTHON variable
+  conda_set_python_command # update the PYTHON variable
 }
 
 function conda_set_python_command {

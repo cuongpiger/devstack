@@ -328,190 +328,181 @@ fi
 
 # ------------------------------------------------------------------------------------------- ENSURE PYTHON IS INSTALLED
 install_python
-#
-#
-## Configure Logging
-## -----------------
-#
-## Set up logging level
-#VERBOSE=$(trueorfalse True VERBOSE)
-#VERBOSE_NO_TIMESTAMP=$(trueorfalse False VERBOSE)
-#
-## Draw a spinner so the user knows something is happening
-#function spinner {
-#    local delay=0.75
-#    local spinstr='/-\|'
-#    printf "..." >&3
-#    while [ true ]; do
-#        local temp=${spinstr#?}
-#        printf "[%c]" "$spinstr" >&3
-#        local spinstr=$temp${spinstr%"$temp"}
-#        sleep $delay
-#        printf "\b\b\b" >&3
-#    done
-#}
-#
-#function kill_spinner {
-#    if [ ! -z "$LAST_SPINNER_PID" ]; then
-#        kill >/dev/null 2>&1 $LAST_SPINNER_PID
-#        printf "\b\b\bdone\n" >&3
-#    fi
-#}
-#
-## Echo text to the log file, summary log file and stdout
-## echo_summary "something to say"
-#function echo_summary {
-#    if [[ -t 3 && "$VERBOSE" != "True" ]]; then
-#        kill_spinner
-#        echo -n -e $@ >&6
-#        spinner &
-#        LAST_SPINNER_PID=$!
-#    else
-#        echo -e $@ >&6
-#    fi
-#}
-#
-## Echo text only to stdout, no log files
-## echo_nolog "something not for the logs"
-#function echo_nolog {
-#    echo $@ >&3
-#}
-#
-## Set up logging for ``stack.sh``
-## Set ``LOGFILE`` to turn on logging
-## Append '.xxxxxxxx' to the given name to maintain history
-## where 'xxxxxxxx' is a representation of the date the file was created
-#TIMESTAMP_FORMAT=${TIMESTAMP_FORMAT:-"%F-%H%M%S"}
-#LOGDAYS=${LOGDAYS:-7}
-#CURRENT_LOG_TIME=$(date "+$TIMESTAMP_FORMAT")
-#
-#if [[ -n "$LOGFILE" ]]; then
-#    # Clean up old log files.  Append '.*' to the user-specified
-#    # ``LOGFILE`` to match the date in the search template.
-#    LOGFILE_DIR="${LOGFILE%/*}"           # dirname
-#    LOGFILE_NAME="${LOGFILE##*/}"         # basename
-#    mkdir -p $LOGFILE_DIR
-#    find $LOGFILE_DIR -maxdepth 1 -name $LOGFILE_NAME.\* -mtime +$LOGDAYS -exec rm {} \;
-#    LOGFILE=$LOGFILE.${CURRENT_LOG_TIME}
-#    SUMFILE=$LOGFILE.summary.${CURRENT_LOG_TIME}
-#
-#    # Redirect output according to config
-#
-#    # Set fd 3 to a copy of stdout. So we can set fd 1 without losing
-#    # stdout later.
-#    exec 3>&1
-#    if [[ "$VERBOSE" == "True" ]]; then
-#        _of_args="-v"
-#        if [[ "$VERBOSE_NO_TIMESTAMP" == "True" ]]; then
-#            _of_args="$_of_args --no-timestamp"
-#        fi
-#        # Set fd 1 and 2 to write the log file
-#        exec 1> >( $PYTHON $TOP_DIR/tools/outfilter.py $_of_args -o "${LOGFILE}" ) 2>&1
-#        # Set fd 6 to summary log file
-#        exec 6> >( $PYTHON $TOP_DIR/tools/outfilter.py -o "${SUMFILE}" )
-#    else
-#        # Set fd 1 and 2 to primary logfile
-#        exec 1> >( $PYTHON $TOP_DIR/tools/outfilter.py -o "${LOGFILE}" ) 2>&1
-#        # Set fd 6 to summary logfile and stdout
-#        exec 6> >( $PYTHON $TOP_DIR/tools/outfilter.py -v -o "${SUMFILE}" >&3 )
-#    fi
-#
-#    echo_summary "stack.sh log $LOGFILE"
-#    # Specified logfile name always links to the most recent log
-#    ln -sf $LOGFILE $LOGFILE_DIR/$LOGFILE_NAME
-#    ln -sf $SUMFILE $LOGFILE_DIR/$LOGFILE_NAME.summary
-#else
-#    # Set up output redirection without log files
-#    # Set fd 3 to a copy of stdout. So we can set fd 1 without losing
-#    # stdout later.
-#    exec 3>&1
-#    if [[ "$VERBOSE" != "True" ]]; then
-#        # Throw away stdout and stderr
-#        exec 1>/dev/null 2>&1
-#    fi
-#    # Always send summary fd to original stdout
-#    exec 6> >( $PYTHON $TOP_DIR/tools/outfilter.py -v >&3 )
-#fi
-#
-## Basic test for ``$DEST`` path permissions (fatal on error unless skipped)
-#check_path_perm_sanity ${DEST}
-#
-## Configure Error Traps
-## ---------------------
-#
-## Kill background processes on exit
-#trap exit_trap EXIT
-#function exit_trap {
-#    local r=$?
-#    jobs=$(jobs -p)
-#    # Only do the kill when we're logging through a process substitution,
-#    # which currently is only to verbose logfile
-#    if [[ -n $jobs && -n "$LOGFILE" && "$VERBOSE" == "True" ]]; then
-#        echo "exit_trap: cleaning up child processes"
-#        kill 2>&1 $jobs
-#    fi
-#
-#    #Remove timing data file
-#    if [ -f "$OSCWRAP_TIMER_FILE" ] ; then
-#        rm "$OSCWRAP_TIMER_FILE"
-#    fi
-#
-#    # Kill the last spinner process
-#    kill_spinner
-#
-#    if [[ $r -ne 0 ]]; then
-#        echo "Error on exit"
-#        # If we error before we've installed os-testr, this will fail.
-#        if type -p generate-subunit > /dev/null; then
-#            generate-subunit $DEVSTACK_START_TIME $SECONDS 'fail' >> ${SUBUNIT_OUTPUT}
-#        fi
-#        if [[ -z $LOGDIR ]]; then
-#            ${PYTHON} $TOP_DIR/tools/worlddump.py
-#        else
-#            ${PYTHON} $TOP_DIR/tools/worlddump.py -d $LOGDIR
-#        fi
-#    else
-#        # If we error before we've installed os-testr, this will fail.
-#        if type -p generate-subunit > /dev/null; then
-#            generate-subunit $DEVSTACK_START_TIME $SECONDS >> ${SUBUNIT_OUTPUT}
-#        fi
-#    fi
-#
-#    exit $r
-#}
-#
-## Exit on any errors so that errors don't compound
-#trap err_trap ERR
-#function err_trap {
-#    local r=$?
-#    set +o xtrace
-#    if [[ -n "$LOGFILE" ]]; then
-#        echo "${0##*/} failed: full log in $LOGFILE"
-#    else
-#        echo "${0##*/} failed"
-#    fi
-#    exit $r
-#}
-#
-## Begin trapping error exit codes
-#set -o errexit
-#
-## Print the kernel version
-#uname -a
-#
-## Reset the bundle of CA certificates
-#SSL_BUNDLE_FILE="$DATA_DIR/ca-bundle.pem"
-#rm -f $SSL_BUNDLE_FILE
-#
-## Import common services (database, message queue) configuration
-#source $TOP_DIR/lib/database
-#source $TOP_DIR/lib/rpc_backend
-#
-## Configure Projects
-## ==================
-#
-## Clone all external plugins
-#fetch_plugins
+
+# ---------------------------------------------------------------------------------------------------- CONFIGURE LOGGING
+# Set up logging level
+VERBOSE=$(trueorfalse True VERBOSE)
+VERBOSE_NO_TIMESTAMP=$(trueorfalse False VERBOSE)
+
+# Draw a spinner so the user knows something is happening
+function spinner {
+  local delay=0.75
+  local spinstr='/-\|'
+  printf "..." >&3
+  while [ true ]; do
+    local temp=${spinstr#?}
+    printf "[%c]" "$spinstr" >&3
+    local spinstr=$temp${spinstr%"$temp"}
+    sleep $delay
+    printf "\b\b\b" >&3
+  done
+}
+
+function kill_spinner {
+  if [ ! -z "$LAST_SPINNER_PID" ]; then
+    kill >/dev/null 2>&1 $LAST_SPINNER_PID
+    printf "\b\b\bdone\n" >&3
+  fi
+}
+
+# Echo text to the log file, summary log file and stdout, echo_summary "something to say"
+function echo_summary {
+  if [[ -t 3 && "$VERBOSE" != "True" ]]; then
+    kill_spinner
+    echo -n -e $@ >&6
+    spinner &
+    LAST_SPINNER_PID=$!
+  else
+    echo -e $@ >&6
+  fi
+}
+
+# Echo text only to stdout, no log files, echo_nolog "something not for the logs"
+function echo_nolog {
+  echo $@ >&3
+}
+
+# Set up logging for `stack.sh`
+# Set ``LOGFILE`` to turn on logging
+# Append '.xxxxxxxx' to the given name to maintain history
+# where 'xxxxxxxx' is a representation of the date the file was created
+TIMESTAMP_FORMAT=${TIMESTAMP_FORMAT:-"%F-%H%M%S"}
+LOGDAYS=${LOGDAYS:-7}
+CURRENT_LOG_TIME=$(date "+$TIMESTAMP_FORMAT")
+
+if [[ -n "$LOGFILE" ]]; then
+  # Clean up old log files.  Append '.*' to the user-specified
+  # ``LOGFILE`` to match the date in the search template.
+  LOGFILE_DIR="${LOGFILE%/*}"   # dirname
+  LOGFILE_NAME="${LOGFILE##*/}" # basename
+  mkdir -p $LOGFILE_DIR
+  find $LOGFILE_DIR -maxdepth 1 -name $LOGFILE_NAME.\* -mtime +$LOGDAYS -exec rm {} \;
+  LOGFILE=$LOGFILE.${CURRENT_LOG_TIME}
+  SUMFILE=$LOGFILE.summary.${CURRENT_LOG_TIME}
+
+  # Redirect output according to config
+
+  # Set fd 3 to a copy of stdout. So we can set fd 1 without losing
+  # stdout later.
+  exec 3>&1
+  if [[ "$VERBOSE" == "True" ]]; then
+    _of_args="-v"
+    if [[ "$VERBOSE_NO_TIMESTAMP" == "True" ]]; then
+      _of_args="$_of_args --no-timestamp"
+    fi
+    # Set fd 1 and 2 to write the log file
+    exec 1> >($PYTHON $TOP_DIR/tools/outfilter.py $_of_args -o "${LOGFILE}") 2>&1
+    # Set fd 6 to summary log file
+    exec 6> >($PYTHON $TOP_DIR/tools/outfilter.py -o "${SUMFILE}")
+  else
+    # Set fd 1 and 2 to primary logfile
+    exec 1> >($PYTHON $TOP_DIR/tools/outfilter.py -o "${LOGFILE}") 2>&1
+    # Set fd 6 to summary logfile and stdout
+    exec 6> >($PYTHON $TOP_DIR/tools/outfilter.py -v -o "${SUMFILE}" >&3)
+  fi
+
+  echo_summary "stack.sh log $LOGFILE"
+  # Specified logfile name always links to the most recent log
+  ln -sf $LOGFILE $LOGFILE_DIR/$LOGFILE_NAME
+  ln -sf $SUMFILE $LOGFILE_DIR/$LOGFILE_NAME.summary
+else
+  # Set up output redirection without log files
+  # Set fd 3 to a copy of stdout. So we can set fd 1 without losing
+  # stdout later.
+  exec 3>&1
+  if [[ "$VERBOSE" != "True" ]]; then
+    # Throw away stdout and stderr
+    exec 1>/dev/null 2>&1
+  fi
+  # Always send summary fd to original stdout
+  exec 6> >($PYTHON $TOP_DIR/tools/outfilter.py -v >&3)
+fi
+
+# Basic test for ``$DEST`` path permissions (fatal on error unless skipped)
+check_path_perm_sanity ${DEST}
+
+# ------------------------------------------------------------------------------------------------ CONFIGURE ERROR TRAPS
+# Kill background processes on exit
+trap exit_trap EXIT
+function exit_trap {
+  local r=$?
+  jobs=$(jobs -p)
+  # Only do the kill when we're logging through a process substitution,
+  # which currently is only to verbose logfile
+  if [[ -n $jobs && -n "$LOGFILE" && "$VERBOSE" == "True" ]]; then
+    echo "exit_trap: cleaning up child processes"
+    kill 2>&1 $jobs
+  fi
+
+  #Remove timing data file
+  if [ -f "$OSCWRAP_TIMER_FILE" ]; then
+    rm "$OSCWRAP_TIMER_FILE"
+  fi
+
+  # Kill the last spinner process
+  kill_spinner
+
+  if [[ $r -ne 0 ]]; then
+    echo "Error on exit"
+    # If we error before we've installed os-testr, this will fail.
+    if type -p generate-subunit >/dev/null; then
+      generate-subunit $DEVSTACK_START_TIME $SECONDS 'fail' >>${SUBUNIT_OUTPUT}
+    fi
+    if [[ -z $LOGDIR ]]; then
+      ${PYTHON} $TOP_DIR/tools/worlddump.py
+    else
+      ${PYTHON} $TOP_DIR/tools/worlddump.py -d $LOGDIR
+    fi
+  else
+    # If we error before we've installed os-testr, this will fail.
+    if type -p generate-subunit >/dev/null; then
+      generate-subunit $DEVSTACK_START_TIME $SECONDS >>${SUBUNIT_OUTPUT}
+    fi
+  fi
+
+  exit $r
+}
+
+# Exit on any errors so that errors don't compound
+trap err_trap ERR
+function err_trap {
+  local r=$?
+  set +o xtrace
+  if [[ -n "$LOGFILE" ]]; then
+    echo "${0##*/} failed: full log in $LOGFILE"
+  else
+    echo "${0##*/} failed"
+  fi
+  exit $r
+}
+
+# ---------------------------------------------------------------------------------- BEGINNING TRAPPING ERROR EXIT CODES
+set -o errexit
+
+# Print the kernel version
+uname -a
+
+# Reset the bundle of CA certificates
+SSL_BUNDLE_FILE="$DATA_DIR/ca-bundle.pem"
+rm -f $SSL_BUNDLE_FILE
+
+# Import common services (database, message queue) configuration
+source $TOP_DIR/lib/database
+source $TOP_DIR/lib/rpc_backend
+
+# --------------------------------------------------------------------------------------------------- CONFIGURE PROJECTS
+# Clone all external plugins
+fetch_plugins
 #
 ## Plugin Phase 0: override_defaults - allow plugins to override
 ## defaults before other services are run
