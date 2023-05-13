@@ -1804,10 +1804,7 @@ function load_plugin_settings {
   done
 }
 
-# plugin_override_defaults
-#
-# Run an extremely early setting phase for plugins that allows default
-# overriding of services.
+# plugin_override_defaults runs an extremely early setting phase for plugins that allows default overriding of services.
 function plugin_override_defaults {
   local plugins="${DEVSTACK_PLUGINS}"
   local plugin
@@ -1855,10 +1852,8 @@ function run_phase {
   if [[ -d $TOP_DIR/extras.d ]]; then
     local extra_plugin_file_name
     for extra_plugin_file_name in $TOP_DIR/extras.d/*.sh; do
-      # NOTE(sdague): only process extras.d for the 3 explicitly
-      # white listed elements in tree. We want these to move out
-      # over time as well, but they are in tree, so we need to
-      # manage that.
+      # NOTE(sdague): only process extras.d for the 3 explicitly white listed elements in tree. We want these to move
+      # out over time as well, but they are in tree, so we need to manage that.
       local exceptions="80-tempest.sh"
       local extra
       extra=$(basename $extra_plugin_file_name)

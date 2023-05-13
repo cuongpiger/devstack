@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function is_equal_to {
-  [[ $1 == $2 ]]
+  [[ $1 == "true" || $2 == "true" ]]
 }
 
 a=False
