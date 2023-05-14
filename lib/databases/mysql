@@ -184,7 +184,7 @@ function _run_mysql_db_inside_docker {
     :
   else
     echo "Container '$container_name' does not exist. Creating and starting..."
-    docker run --name "$docker_db_name" --network host -e MYSQL_ROOT_PASSWORD=$DATABASE_PASSWORD -d mysql:8
+    docker run --name "$container_name" --network host -e MYSQL_ROOT_PASSWORD=$DATABASE_PASSWORD -d mysql:8
   fi
 }
 
