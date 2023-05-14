@@ -48,36 +48,16 @@ function cleanup_rpc_backend {
 }
 
 function _run_rabbitmq_inside_docker {
-  local container_name="openstack-rabbitmq"
+  local container_name=$1
   local restart="false"
-  local timeout=20
-  local wait_time=0
 
   # Check if the container exists
   if docker inspect "$container_name" >/dev/null 2>&1; then
-    echo "Container '$container_name' already exists."
-    restart="true"
+    :
   else
     echo "Container '$container_name' does not exist. Creating and starting..."
     docker run -d --name "$container_name" --network host bitnami/rabbitmq:3.11.15
   fi
-
-  # Restart or start the container
-  if [ "$restart" = "true" ]; then
-    echo "Restarting container '$container_name'..."
-    docker restart "$container_name"
-  fi
-
-  # Wait for the container to start successfully
-  echo "Waiting for container '$container_name' to start..."
-  while ! docker inspect -f '{{.State.Running}}' "$container_name" | grep -q '^true$'; do
-    sleep 1
-    wait_time=$((wait_time + 1))
-    if [ $wait_time -gt $timeout ]; then
-      die $LINENO "Container '$container_name' failed to start."
-    fi
-  done
-  echo "Container '$container_name' is running successfully."
 }
 
 # install rpc backend
@@ -86,7 +66,9 @@ function install_rpc_backend {
     # Install rabbitmq-server
     if is_equal_to $DOCKERIZED_RPC "True"; then
       check_docker_status
-      _run_rabbitmq_inside_docker
+      docker_rpc_name="openstack-rabbitmq"
+      _run_rabbitmq_inside_docker "$docker_rpc_name"
+      typeset -xr docker_rpc_name
     else
       install_package rabbitmq-server
     fi
@@ -118,44 +100,63 @@ EOF
 # restart the rpc backend
 function restart_rpc_backend {
   if is_service_enabled rabbit; then
-    # Start rabbitmq-server
-    echo_summary "Starting RabbitMQ"
-    # NOTE(bnemec): Retry initial rabbitmq configuration to deal with
-    # the fact that sometimes it fails to start properly.
-    # Reference: https://bugzilla.redhat.com/show_bug.cgi?id=1144100
-    # NOTE(tonyb): Extend the original retry logic to only restart rabbitmq
-    # every second time around the loop.
-    # See: https://bugs.launchpad.net/devstack/+bug/1449056 for details on
-    # why this is needed.  This can bee seen on vivid and Debian unstable
-    # (May 2015)
-    # TODO(tonyb): Remove this when Debian and Ubuntu have a fixed systemd
-    # service file.
-    local i
-    for i in $(seq 20); do
-      local rc=0
-
-      [[ $i -eq "20" ]] && die $LINENO "Failed to set rabbitmq password"
-
-      if [[ $((i % 2)) == "0" ]]; then
-        restart_service rabbitmq-server
+    if is_equal_to $DOCKERIZED_RPC "True"; then
+      echo_summary "Starting RabbitMQ"
+      out=$(docker exec "$docker_rpc_name" rabbitmqctl list_users) ||
+        {
+          echo "failed to list users" 1>&2
+          return 1
+        }
+      found=$(echo "$out" | awk '$1 == user { print $1 }' "user=$RABBIT_USERID")
+      if [ "$found" = "$RABBIT_USERID" ]; then
+        docker exec "$docker_rpc_name" rabbitmqctl change_password "$RABBIT_USERID" "$RABBIT_PASSWORD" ||
+          {
+            echo "failed changing pass for '$user'" 1>&2
+            return 1
+          }
+      else
+        docker exec "$docker_rpc_name" rabbitmqctl add_user "$RABBIT_USERID" "$RABBIT_PASSWORD"
       fi
+      docker exec "$docker_rpc_name" rabbitmqctl set_permissions "$RABBIT_USERID" ".*" ".*" ".*"
+    else
+      # Start rabbitmq-server
+      # NOTE(bnemec): Retry initial rabbitmq configuration to deal with
+      # the fact that sometimes it fails to start properly.
+      # Reference: https://bugzilla.redhat.com/show_bug.cgi?id=1144100
+      # NOTE(tonyb): Extend the original retry logic to only restart rabbitmq
+      # every second time around the loop.
+      # See: https://bugs.launchpad.net/devstack/+bug/1449056 for details on
+      # why this is needed.  This can bee seen on vivid and Debian unstable
+      # (May 2015)
+      # TODO(tonyb): Remove this when Debian and Ubuntu have a fixed systemd
+      # service file.
+      local i
+      for i in $(seq 20); do
+        local rc=0
 
-      rabbit_setuser "$RABBIT_USERID" "$RABBIT_PASSWORD" || rc=$?
-      if [ $rc -ne 0 ]; then
-        continue
-      fi
+        [[ $i -eq "20" ]] && die $LINENO "Failed to set rabbitmq password"
 
-      # change the rabbit password since the default is "guest"
-      sudo rabbitmqctl change_password \
-        $RABBIT_USERID $RABBIT_PASSWORD || rc=$?
-      if [ $rc -ne 0 ]; then
-        continue
-      fi
+        if [[ $((i % 2)) == "0" ]]; then
+          restart_service rabbitmq-server
+        fi
 
-      break
-    done
-    # NOTE(frickler): Remove the default guest user
-    sudo rabbitmqctl delete_user guest || true
+        rabbit_setuser "$RABBIT_USERID" "$RABBIT_PASSWORD" || rc=$?
+        if [ $rc -ne 0 ]; then
+          continue
+        fi
+
+        # change the rabbit password since the default is "guest"
+        sudo rabbitmqctl change_password \
+          $RABBIT_USERID $RABBIT_PASSWORD || rc=$?
+        if [ $rc -ne 0 ]; then
+          continue
+        fi
+
+        break
+      done
+      # NOTE(frickler): Remove the default guest user
+      sudo rabbitmqctl delete_user guest || true
+    fi
   fi
 }
 

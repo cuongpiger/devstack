@@ -701,9 +701,10 @@ run_phase stack pre-install
 # NOTE(danms): Set global limits before installing anything
 set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}
 
+# Install and restart the RabbitMQ server
 install_rpc_backend
-#restart_rpc_backend
-#
+restart_rpc_backend
+
 #if is_service_enabled $DATABASE_BACKENDS; then
 #    install_database
 #fi
