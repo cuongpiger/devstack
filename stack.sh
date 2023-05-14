@@ -830,72 +830,62 @@ fi
 # Phase: install
 run_phase stack install
 
-## Install the OpenStack client, needed for most setup commands
-#if use_library_from_git "python-openstackclient"; then
-#    git_clone_by_name "python-openstackclient"
-#    setup_dev_lib "python-openstackclient"
-#else
-#    pip_install_gr python-openstackclient
-#fi
-#
-## Installs alias for osc so that we can collect timing for all
-## osc commands. Alias dies with stack.sh.
-#install_oscwrap
-#
-## Syslog
-## ------
-#
-#if [[ $SYSLOG != "False" ]]; then
-#    if [[ "$SYSLOG_HOST" = "$HOST_IP" ]]; then
-#        # Configure the master host to receive
-#        cat <<EOF | sudo tee /etc/rsyslog.d/90-stack-m.conf >/dev/null
-#\$ModLoad imrelp
-#\$InputRELPServerRun $SYSLOG_PORT
-#EOF
-#    else
-#        # Set rsyslog to send to remote host
-#        cat <<EOF | sudo tee /etc/rsyslog.d/90-stack-s.conf >/dev/null
-#*.*		:omrelp:$SYSLOG_HOST:$SYSLOG_PORT
-#EOF
-#    fi
-#
-#    RSYSLOGCONF="/etc/rsyslog.conf"
-#    if [ -f $RSYSLOGCONF ]; then
-#        sudo cp -b $RSYSLOGCONF $RSYSLOGCONF.bak
-#        if [[ $(grep '$SystemLogRateLimitBurst' $RSYSLOGCONF)  ]]; then
-#            sudo sed -i 's/$SystemLogRateLimitBurst\ .*/$SystemLogRateLimitBurst\ 0/' $RSYSLOGCONF
-#        else
-#            sudo sed -i '$ i $SystemLogRateLimitBurst\ 0' $RSYSLOGCONF
-#        fi
-#        if [[ $(grep '$SystemLogRateLimitInterval' $RSYSLOGCONF)  ]]; then
-#            sudo sed -i 's/$SystemLogRateLimitInterval\ .*/$SystemLogRateLimitInterval\ 0/' $RSYSLOGCONF
-#        else
-#            sudo sed -i '$ i $SystemLogRateLimitInterval\ 0' $RSYSLOGCONF
-#        fi
-#    fi
-#
-#    echo_summary "Starting rsyslog"
-#    restart_service rsyslog
-#fi
-#
-#
-## Export Certificate Authority Bundle
-## -----------------------------------
-#
-## If certificates were used and written to the SSL bundle file then these
-## should be exported so clients can validate their connections.
-#
-#if [ -f $SSL_BUNDLE_FILE ]; then
-#    export OS_CACERT=$SSL_BUNDLE_FILE
-#fi
-#
-#
-## Configure database
-## ------------------
-#
-#if is_service_enabled $DATABASE_BACKENDS; then
-#    configure_database
-#fi
+# Install the OpenStack client, needed for most setup commands
+if use_library_from_git "python-openstackclient"; then
+  git_clone_by_name "python-openstackclient"
+  setup_dev_lib "python-openstackclient"
+else
+  pip_install_gr python-openstackclient
+fi
+
+# Installs alias for `osc` so that we can collect timing for all `osc` commands. Alias dies with `stack.sh`.
+install_oscwrap
+
+# --------------------------------------------------------------------------------------------------------------- SYSLOG
+if [[ $SYSLOG != "False" ]]; then
+  if [[ "$SYSLOG_HOST" = "$HOST_IP" ]]; then
+    # Configure the master host to receive
+    cat <<EOF | sudo tee /etc/rsyslog.d/90-stack-m.conf >/dev/null
+\$ModLoad imrelp
+\$InputRELPServerRun $SYSLOG_PORT
+EOF
+  else
+    # Set rsyslog to send to remote host
+    cat <<EOF | sudo tee /etc/rsyslog.d/90-stack-s.conf >/dev/null
+*.*		:omrelp:$SYSLOG_HOST:$SYSLOG_PORT
+EOF
+  fi
+
+  RSYSLOGCONF="/etc/rsyslog.conf"
+  if [ -f $RSYSLOGCONF ]; then
+    sudo cp -b $RSYSLOGCONF $RSYSLOGCONF.bak
+    if [[ $(grep '$SystemLogRateLimitBurst' $RSYSLOGCONF) ]]; then
+      sudo sed -i 's/$SystemLogRateLimitBurst\ .*/$SystemLogRateLimitBurst\ 0/' $RSYSLOGCONF
+    else
+      sudo sed -i '$ i $SystemLogRateLimitBurst\ 0' $RSYSLOGCONF
+    fi
+    if [[ $(grep '$SystemLogRateLimitInterval' $RSYSLOGCONF) ]]; then
+      sudo sed -i 's/$SystemLogRateLimitInterval\ .*/$SystemLogRateLimitInterval\ 0/' $RSYSLOGCONF
+    else
+      sudo sed -i '$ i $SystemLogRateLimitInterval\ 0' $RSYSLOGCONF
+    fi
+  fi
+
+  echo_summary "Starting rsyslog"
+  restart_service rsyslog
+fi
+
+# ---------------------------------------------------------------------------------- EXPORT CERTIFICATE AUTHORITY BUNDLE
+# If certificates were used and written to the SSL bundle file then these should be exported so clients can validate
+# their connections.
+if [ -f $SSL_BUNDLE_FILE ]; then
+  export OS_CACERT=$SSL_BUNDLE_FILE
+fi
+
+# --------------------------------------------------------------------------------------------------- CONFIGURE DATABASE
+if is_service_enabled $DATABASE_BACKENDS; then
+  configure_database
+fi
 #
 ## Save configuration values
 #save_stackenv $LINENO

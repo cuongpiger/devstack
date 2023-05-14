@@ -64,8 +64,13 @@ function cleanup_database_mysql {
 
 function recreate_database_mysql {
   local db=$1
-  mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "DROP DATABASE IF EXISTS $db;"
-  mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "CREATE DATABASE $db CHARACTER SET utf8;"
+  if is_equal_to $DOCKERIZED_DATABASE True; then
+    docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -e "DROP DATABASE IF EXISTS $db;"
+    docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -e "CREATE DATABASE $db CHARACTER SET utf8;"
+  else
+    mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "DROP DATABASE IF EXISTS $db;"
+    mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "CREATE DATABASE $db CHARACTER SET utf8;"
+  fi
 }
 
 function configure_database_mysql {
@@ -89,13 +94,17 @@ function configure_database_mysql {
   # Change bind-address from localhost (127.0.0.1) to any (::)
   iniset -sudo $my_conf mysqld bind-address "$(ipv6_unquote $SERVICE_LISTEN_ADDRESS)"
 
-  # (Re)Start mysql-server
-  if is_fedora || is_suse; then
-    # service is not started by default
-    start_service $MYSQL_SERVICE_NAME
-  elif is_ubuntu; then
-    # required since bind-address could have changed above
-    restart_service $MYSQL_SERVICE_NAME
+  if is_equal_to $DOCKERIZED_DATABASE True; then
+    :
+  else
+    # (Re)Start mysql-server
+    if is_fedora || is_suse; then
+      # service is not started by default
+      start_service $MYSQL_SERVICE_NAME
+    elif is_ubuntu; then
+      # required since bind-address could have changed above
+      restart_service $MYSQL_SERVICE_NAME
+    fi
   fi
 
   # Set the root password - only works the first time. For Ubuntu, we already
@@ -108,7 +117,11 @@ function configure_database_mysql {
   if is_ubuntu && [ "$MYSQL_SERVICE_NAME" == "mariadb" ]; then
     local cmd_args="-uroot -p$DATABASE_PASSWORD "
   else
-    local cmd_args="-uroot -p$DATABASE_PASSWORD -h$SERVICE_LOCAL_HOST "
+    if is_equal_to $DOCKERIZED_DATABASE True; then
+      local cmd_args="docker exec openstack-mysql mysql -uroot -p$DATABASE_PASSWORD "
+    else
+      local cmd_args="-uroot -p$DATABASE_PASSWORD -h$SERVICE_LOCAL_HOST "
+    fi
   fi
 
   # In mariadb e.g. on Ubuntu socket plugin is used for authentication
@@ -118,10 +131,18 @@ function configure_database_mysql {
     sudo mysql $cmd_args -e "UPDATE mysql.user SET plugin='' WHERE user='$DATABASE_USER' AND host='localhost';"
     sudo mysql $cmd_args -e "FLUSH PRIVILEGES;"
   fi
-  # Create DB user if it does not already exist
-  sudo mysql $cmd_args -e "CREATE USER IF NOT EXISTS '$DATABASE_USER'@'%' identified by '$DATABASE_PASSWORD';"
-  # Update the DB to give user '$DATABASE_USER'@'%' full control of the all databases:
-  sudo mysql $cmd_args -e "GRANT ALL PRIVILEGES ON *.* TO '$DATABASE_USER'@'%';"
+
+  if is_equal_to $DOCKERIZED_DATABASE True; then
+    # Create DB user if it does not already exist
+    $cmd_args -e "CREATE USER IF NOT EXISTS '$DATABASE_USER'@'%' identified by '$DATABASE_PASSWORD';"
+    # Update the DB to give user '$DATABASE_USER'@'%' full control of the all databases:
+    $cmd_args -e "GRANT ALL PRIVILEGES ON *.* TO '$DATABASE_USER'@'%';"
+  else
+    # Create DB user if it does not already exist
+    sudo mysql $cmd_args -e "CREATE USER IF NOT EXISTS '$DATABASE_USER'@'%' identified by '$DATABASE_PASSWORD';"
+    # Update the DB to give user '$DATABASE_USER'@'%' full control of the all databases:
+    sudo mysql $cmd_args -e "GRANT ALL PRIVILEGES ON *.* TO '$DATABASE_USER'@'%';"
+  fi
 
   # Now update ``my.cnf`` for some local needs and restart the mysql service
 
@@ -158,9 +179,15 @@ function configure_database_mysql {
 
     # Create our stats database for accounting
     recreate_database stats
-    mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST -e \
-      "CREATE TABLE queries (db VARCHAR(32), op VARCHAR(32),
+    if is_equal_to $DOCKERIZED_DATABASE True; then
+      docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -e \
+        "CREATE TABLE queries (db VARCHAR(32), op VARCHAR(32),
                 count INT, PRIMARY KEY (db, op)) ENGINE MEMORY" stats
+    else
+      mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST -e \
+        "CREATE TABLE queries (db VARCHAR(32), op VARCHAR(32),
+                count INT, PRIMARY KEY (db, op)) ENGINE MEMORY" stats
+    fi
   fi
 
   if [[ "$MYSQL_REDUCE_MEMORY" == "True" ]]; then
@@ -173,7 +200,11 @@ function configure_database_mysql {
     iniset -sudo $my_conf mysqld max_allowed_packet 8M
   fi
 
-  restart_service $MYSQL_SERVICE_NAME
+  if is_equal_to $DOCKERIZED_DATABASE True; then
+    :
+  else
+    restart_service $MYSQL_SERVICE_NAME
+  fi
 }
 
 function _run_mysql_db_inside_docker {
