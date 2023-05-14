@@ -705,13 +705,14 @@ set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}
 install_rpc_backend
 restart_rpc_backend
 
-#if is_service_enabled $DATABASE_BACKENDS; then
-#    install_database
-#fi
-#if [ -n "$DATABASE_TYPE" ]; then
-#    install_database_python
-#fi
-#
+if is_service_enabled $DATABASE_BACKENDS; then
+  install_database
+fi
+
+if [ -n "$DATABASE_TYPE" ]; then
+  install_database_python
+fi
+
 #if is_service_enabled neutron; then
 #    install_neutron_agent_packages
 #fi
