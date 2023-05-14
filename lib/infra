@@ -18,7 +18,6 @@
 _XTRACE_INFRA=$(set +o | grep xtrace)
 set +o xtrace
 
-
 # Defaults
 # --------
 GITDIR["pbr"]=$DEST/pbr
@@ -28,25 +27,25 @@ GITDIR["pbr"]=$DEST/pbr
 
 # install_infra() - Collect source and prepare
 function install_infra {
-    local PIP_VIRTUAL_ENV="$REQUIREMENTS_DIR/.venv"
-    [ ! -d $PIP_VIRTUAL_ENV ] && ${VIRTUALENV_CMD} $PIP_VIRTUAL_ENV
-    # We don't care about testing git pbr in the requirements venv.
-    PIP_VIRTUAL_ENV=$PIP_VIRTUAL_ENV pip_install -U pbr
-    PIP_VIRTUAL_ENV=$PIP_VIRTUAL_ENV pip_install $REQUIREMENTS_DIR
+  local PIP_VIRTUAL_ENV="$REQUIREMENTS_DIR/.venv"
+  [ ! -d $PIP_VIRTUAL_ENV ] && ${VIRTUALENV_CMD} $PIP_VIRTUAL_ENV
+  # We don't care about testing git pbr in the requirements venv.
+  PIP_VIRTUAL_ENV=$PIP_VIRTUAL_ENV pip_install -U pbr
+  PIP_VIRTUAL_ENV=$PIP_VIRTUAL_ENV pip_install $REQUIREMENTS_DIR
 
-    # Unset the PIP_VIRTUAL_ENV so that PBR does not end up trapped
-    # down the VENV well
-    unset PIP_VIRTUAL_ENV
+  # Unset the PIP_VIRTUAL_ENV so that PBR does not end up trapped
+  # down the VENV well
+  unset PIP_VIRTUAL_ENV
 
-    # Install pbr
-    if use_library_from_git "pbr"; then
-        git_clone_by_name "pbr"
-        setup_dev_lib "pbr"
-    else
-        # Always upgrade pbr to latest version as we may have pulled it
-        # in via system packages.
-        pip_install "-U" "pbr"
-    fi
+  # Install pbr
+  if use_library_from_git "pbr"; then
+    git_clone_by_name "pbr"
+    setup_dev_lib "pbr"
+  else
+    # Always upgrade pbr to latest version as we may have pulled it
+    # in via system packages.
+    pip_install "-U" "pbr"
+  fi
 }
 
 # Restore xtrace

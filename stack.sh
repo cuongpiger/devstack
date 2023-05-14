@@ -664,48 +664,44 @@ source $TOP_DIR/tools/install_prereqs.sh
 # Whilst it is clear that global installations of upstream pip are less and less common, with virtualenv's being the
 # general approach now; there are a lot of devstack plugins that assume a global install environment.
 if [[ "$OFFLINE" != "True" ]]; then
-    PYPI_ALTERNATIVE_URL=${PYPI_ALTERNATIVE_URL:-""} $TOP_DIR/tools/install_pip.sh
+  PYPI_ALTERNATIVE_URL=${PYPI_ALTERNATIVE_URL:-""} $TOP_DIR/tools/install_pip.sh
 fi
-#
-## Do the ugly hacks for broken packages and distros
-#source $TOP_DIR/tools/fixup_stuff.sh
-#fixup_all
-#
-## Install subunit for the subunit output stream
-#pip_install -U os-testr
-#
-## the default rate limit of 1000 messages / 30 seconds is not
-## sufficient given how verbose our logging is.
-#iniset -sudo /etc/systemd/journald.conf "Journal" "RateLimitBurst" "0"
-#sudo systemctl restart systemd-journald
-#
-## Virtual Environment
-## -------------------
-#
-## Install required infra support libraries
-#install_infra
-#
-## Install bindep
-#$VIRTUALENV_CMD $DEST/bindep-venv
-## TODO(ianw) : optionally install from zuul checkout?
-#$DEST/bindep-venv/bin/pip install bindep
-#export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep
-#
-## Install packages as defined in plugin bindep.txt files
-#pkgs="$( _get_plugin_bindep_packages )"
-#if [[ -n "${pkgs}" ]]; then
-#    install_package ${pkgs}
-#fi
-#
-## Extras Pre-install
-## ------------------
-## Phase: pre-install
-#run_phase stack pre-install
-#
-## NOTE(danms): Set global limits before installing anything
-#set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}
-#
-#install_rpc_backend
+
+# Do the ugly hacks for broken packages and distros
+source $TOP_DIR/tools/fixup_stuff.sh
+fixup_all
+
+# Install subunit for the subunit output stream
+pip_install -U os-testr
+
+# the default rate limit of 1000 messages / 30 seconds is not sufficient given how verbose our logging is.
+iniset -sudo /etc/systemd/journald.conf "Journal" "RateLimitBurst" "0"
+sudo systemctl restart systemd-journald
+
+# -------------------------------------------------------------------------------------------------- VIRTUAL ENVIRONMENT
+# Install required infra support libraries
+install_infra
+
+# Install bindep
+$VIRTUALENV_CMD $DEST/bindep-venv
+# TODO(ianw) : optionally install from zuul checkout?
+$DEST/bindep-venv/bin/pip install bindep
+export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep
+
+# Install packages as defined in plugin bindep.txt files
+pkgs="$(_get_plugin_bindep_packages)"
+if [[ -n "${pkgs}" ]]; then
+  install_package ${pkgs}
+fi
+
+# --------------------------------------------------------------------------------------------------- EXTRAS PRO-INSTALL
+# Phase: pre-install
+run_phase stack pre-install
+
+# NOTE(danms): Set global limits before installing anything
+set_systemd_override DefaultLimitNOFILE ${ULIMIT_NOFILE}
+
+install_rpc_backend
 #restart_rpc_backend
 #
 #if is_service_enabled $DATABASE_BACKENDS; then

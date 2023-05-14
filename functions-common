@@ -2529,6 +2529,18 @@ function is_equal_to {
   [[ $1 == $2 ]]
 }
 
+function check_docker_status {
+  if ! command -v docker >/dev/null 2>&1; then
+    die $LINENO "Please install docker first."
+  fi
+
+  if ! docker info >/dev/null 2>&1; then
+    die $LINENO "Docker is not running."
+  fi
+
+  echo "Docker is installed and running."
+}
+
 # Restore xtrace
 $_XTRACE_FUNCTIONS_COMMON
 
