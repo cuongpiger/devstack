@@ -709,11 +709,10 @@ function setup_systemd_logging {
   else
     pidstr="(pid=%(process)d) "
   fi
-  iniset $conf_file DEFAULT logging_debug_format_suffix "[00;33m{{${pidstr}%(funcName)s %(pathname)s:%(lineno)d}}[00m"
-
-  iniset $conf_file DEFAULT logging_context_format_string "%(color)s%(levelname)s %(name)s [[01;36m%(global_request_id)s %(request_id)s [00;36m%(project_name)s %(user_name)s%(color)s] [01;35m%(instance)s%(color)s%(message)s[00m"
-  iniset $conf_file DEFAULT logging_default_format_string "%(color)s%(levelname)s %(name)s [[00;36m-%(color)s] [01;35m%(instance)s%(color)s%(message)s[00m"
-  iniset $conf_file DEFAULT logging_exception_prefix "ERROR %(name)s [01;35m%(instance)s[00m"
+  iniset $conf_file DEFAULT logging_context_format_string "%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s.%(funcName)s:%(lineno)s [%(global_request_id)s %(request_id)s '%(user_identity)s] [C] %(instance)s %(message)s"
+  iniset $conf_file DEFAULT logging_default_format_string "%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s.%(funcName)s:%(lineno)s [-] %(instance)s%(message)s"
+  iniset $conf_file DEFAULT logging_debug_format_suffix "[00;33m{{ (pid=%(process)d) %(pathname)s.%(funcName)s:%(lineno)d }}[00m"
+  iniset $conf_file DEFAULT logging_exception_prefix "[033;31mERROR %(name)s.%(funcName)s:%(lineno)s [01;35m%(instance)s[00m"
 }
 
 function setup_standard_logging_identity {

@@ -720,79 +720,71 @@ fi
 if is_service_enabled etcd3; then
   install_etcd3
 fi
-#
-## Setup TLS certs
-## ---------------
-#
-## Do this early, before any webservers are set up to ensure
-## we don't run into problems with missing certs when apache
-## is restarted.
-#if is_service_enabled tls-proxy; then
-#    configure_CA
-#    init_CA
-#    init_cert
-#fi
-#
-## Dstat
-## -----
-#
-## Install dstat services prerequisites
-#install_dstat
-#
-#
-## Check Out and Install Source
-## ----------------------------
-#
-#echo_summary "Installing OpenStack project source"
-#
-## Install additional libraries
-#install_libs
-#
-## Install uwsgi
-#install_apache_uwsgi
-#
-## Install client libraries
-#install_keystoneauth
-#install_keystoneclient
-#install_glanceclient
-#install_cinderclient
-#install_novaclient
-#if is_service_enabled swift glance horizon; then
-#    install_swiftclient
-#fi
-#if is_service_enabled neutron nova horizon; then
-#    install_neutronclient
-#fi
-#
-## Install middleware
-#install_keystonemiddleware
-#
-#if is_service_enabled keystone; then
-#    if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
-#        stack_install_service keystone
-#        configure_keystone
-#    fi
-#fi
-#
-#if is_service_enabled swift; then
-#    if is_service_enabled ceilometer; then
-#        install_ceilometermiddleware
-#    fi
-#    stack_install_service swift
-#    configure_swift
-#
-#    # s3api middleware to provide S3 emulation to Swift
-#    if is_service_enabled s3api; then
-#        # Replace the nova-objectstore port by the swift port
-#        S3_SERVICE_PORT=8080
-#    fi
-#fi
-#
-#if is_service_enabled g-api n-api; then
-#    # Image catalog service
-#    stack_install_service glance
-#    configure_glance
-#fi
+
+# ------------------------------------------------------------------------------------------------------ SETUP TLS CERTS
+# Do this early, before any webservers are set up to ensure we don't run into problems with missing certs when apache is
+# restarted.
+if is_service_enabled tls-proxy; then
+  configure_CA
+  init_CA
+  init_cert
+fi
+
+# ---------------------------------------------------------------------------------------------------------------- DSTAT
+#Install dstat services prerequisites
+install_dstat
+
+# ------------------------------------------------------------------------------------------ CHECKOUT AND INSTALL SOURCE
+echo_summary "Installing OpenStack project source"
+
+# Install additional libraries
+install_libs
+
+# Install uwsgi
+install_apache_uwsgi
+
+# Install client libraries
+install_keystoneauth
+install_keystoneclient
+install_glanceclient
+install_cinderclient
+install_novaclient
+if is_service_enabled swift glance horizon; then
+  install_swiftclient
+fi
+if is_service_enabled neutron nova horizon; then
+  install_neutronclient
+fi
+
+# Install middleware
+install_keystonemiddleware
+
+if is_service_enabled keystone; then
+  if [ "$KEYSTONE_SERVICE_HOST" == "$SERVICE_HOST" ]; then
+    stack_install_service keystone
+    configure_keystone
+  fi
+fi
+
+if is_service_enabled swift; then
+  if is_service_enabled ceilometer; then
+    install_ceilometermiddleware
+  fi
+  stack_install_service swift
+  configure_swift
+
+  # s3api middleware to provide S3 emulation to Swift
+  if is_service_enabled s3api; then
+    # Replace the nova-objectstore port by the swift port
+    S3_SERVICE_PORT=8080
+  fi
+fi
+
+if is_service_enabled g-api n-api; then
+  # Image catalog service
+  stack_install_service glance
+  configure_glance
+fi
 #
 #if is_service_enabled cinder; then
 #    # Block volume service
