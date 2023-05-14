@@ -164,8 +164,13 @@ function rpc_backend_add_vhost {
   local vhost="$1"
   if is_service_enabled rabbit; then
     if [ -z $(sudo rabbitmqctl list_vhosts | grep $vhost) ]; then
-      sudo rabbitmqctl add_vhost $vhost
-      sudo rabbitmqctl set_permissions -p $vhost $RABBIT_USERID ".*" ".*" ".*"
+      if is_equal_to $DOCKERIZED_RPC True; then
+        docker exec "$docker_rpc_name" rabbitmqctl add_vhost $vhost
+        docker exec "$docker_rpc_name" rabbitmqctl set_permissions -p $vhost $RABBIT_USERID ".*" ".*" ".*"
+      else
+        sudo rabbitmqctl add_vhost $vhost
+        sudo rabbitmqctl set_permissions -p $vhost $RABBIT_USERID ".*" ".*" ".*"
+      fi
     fi
   else
     echo 'RPC backend does not support vhosts'

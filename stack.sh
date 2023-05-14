@@ -785,55 +785,51 @@ if is_service_enabled g-api n-api; then
   stack_install_service glance
   configure_glance
 fi
-#
-#if is_service_enabled cinder; then
-#    # Block volume service
-#    stack_install_service cinder
-#    configure_cinder
-#fi
-#
-#if is_service_enabled neutron; then
-#    # Network service
-#    stack_install_service neutron
-#fi
-#
-#if is_service_enabled nova; then
-#    # Compute service
-#    stack_install_service nova
-#    configure_nova
-#fi
-#
-#if is_service_enabled placement; then
-#    # placement api
-#    stack_install_service placement
-#    configure_placement
-#fi
-#
-## create a placement-client fake service to know we need to configure
-## placement connectivity. We configure the placement service for nova
-## if placement-api or placement-client is active, and n-cpu on the
-## same box.
-#if is_service_enabled placement placement-client; then
-#    if is_service_enabled n-cpu || is_service_enabled n-sch; then
-#        configure_placement_nova_compute
-#    fi
-#fi
-#
-#if is_service_enabled horizon; then
-#    # dashboard
-#    stack_install_service horizon
-#fi
-#
-#if is_service_enabled tls-proxy; then
-#    fix_system_ca_bundle_path
-#fi
-#
-## Extras Install
-## --------------
-#
-## Phase: install
-#run_phase stack install
-#
+
+if is_service_enabled cinder; then
+  # Block volume service
+  stack_install_service cinder
+  configure_cinder
+fi
+
+if is_service_enabled neutron; then
+  # Network service
+  stack_install_service neutron
+fi
+
+if is_service_enabled nova; then
+  # Compute service
+  stack_install_service nova
+  configure_nova
+fi
+
+if is_service_enabled placement; then
+  # placement api
+  stack_install_service placement
+  configure_placement
+fi
+
+# create a placement-client fake service to know we need to configure placement connectivity. We configure the placement
+# service for nova if placement-api or placement-client is active, and n-cpu on the same box.
+if is_service_enabled placement placement-client; then
+  if is_service_enabled n-cpu || is_service_enabled n-sch; then
+    configure_placement_nova_compute
+  fi
+fi
+
+if is_service_enabled horizon; then
+  # dashboard
+  stack_install_service horizon
+fi
+
+if is_service_enabled tls-proxy; then
+  fix_system_ca_bundle_path
+fi
+
+# ------------------------------------------------------------------------------------------------------- EXTRAS INSTALL
+# Phase: install
+run_phase stack install
+
 ## Install the OpenStack client, needed for most setup commands
 #if use_library_from_git "python-openstackclient"; then
 #    git_clone_by_name "python-openstackclient"

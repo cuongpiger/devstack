@@ -2295,7 +2295,8 @@ function python3_version {
 # restart_service service-name
 function restart_service {
   if is_equal_to $DOCKERIZED_RPC True; then
-    docker container restart "$docker_rpc_name"
+#    docker container restart "$docker_rpc_name"
+  :
   else
     if [ -x /bin/systemctl ]; then
       sudo /bin/systemctl restart $1
