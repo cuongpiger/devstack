@@ -221,6 +221,11 @@ function _run_mysql_db_inside_docker {
 
 function install_database_mysql {
   if is_equal_to $DOCKERIZED_DATABASE True; then
+    sudo debconf-set-selections <<MYSQL_PRESEED
+mysql-server mysql-server/root_password password $DATABASE_PASSWORD
+mysql-server mysql-server/root_password_again password $DATABASE_PASSWORD
+mysql-server mysql-server/start_on_boot boolean true
+MYSQL_PRESEED
     local docker_db_name="openstack-mysql"
     if [[ ! -e $HOME/.my.cnf ]]; then
       cat <<EOF >$HOME/.my.cnf
