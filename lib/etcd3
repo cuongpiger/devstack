@@ -37,17 +37,23 @@ fi
 
 # start_etcd3() - Starts to run the etcd process
 function start_etcd3 {
-  local cmd="$ETCD_BIN_DIR/etcd"
+  if is_equal_to $DOCKERIZED_ETCD3 True; then
+    local cmd="docker exec openstack-etcd3 etcd"
+  else
+    local cmd="$ETCD_BIN_DIR/etcd"
+  fi
   cmd+=" --name $HOSTNAME --data-dir $ETCD_DATA_DIR"
   cmd+=" --initial-cluster-state new --initial-cluster-token etcd-cluster-01"
   cmd+=" --initial-cluster $HOSTNAME=http://$SERVICE_HOST:$ETCD_PEER_PORT"
   cmd+=" --initial-advertise-peer-urls http://$SERVICE_HOST:$ETCD_PEER_PORT"
   cmd+=" --advertise-client-urls http://$SERVICE_HOST:$ETCD_PORT"
+
   if [ "$SERVICE_LISTEN_ADDRESS" == "::" ]; then
     cmd+=" --listen-peer-urls http://[::]:$ETCD_PEER_PORT "
   else
     cmd+=" --listen-peer-urls http://0.0.0.0:$ETCD_PEER_PORT "
   fi
+
   cmd+=" --listen-client-urls http://$SERVICE_HOST:$ETCD_PORT"
   if [ "$ENABLE_DEBUG_LOG_LEVEL" == "True" ]; then
     cmd+=" --debug"
@@ -64,9 +70,13 @@ function start_etcd3 {
     iniset -sudo $unitfile "Service" "Environment" "ETCD_UNSUPPORTED_ARCH=arm64"
   fi
 
-  $SYSTEMCTL daemon-reload
-  $SYSTEMCTL enable $ETCD_SYSTEMD_SERVICE
-  $SYSTEMCTL start $ETCD_SYSTEMD_SERVICE
+  if is_equal_to $DOCKERIZED_ETCD3 True; then
+    :
+  else
+    $SYSTEMCTL daemon-reload
+    $SYSTEMCTL enable $ETCD_SYSTEMD_SERVICE
+    $SYSTEMCTL start $ETCD_SYSTEMD_SERVICE
+  fi
 }
 
 # stop_etcd3() stops the etcd3 process

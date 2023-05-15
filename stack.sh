@@ -886,61 +886,45 @@ fi
 if is_service_enabled $DATABASE_BACKENDS; then
   configure_database
 fi
-#
-## Save configuration values
-#save_stackenv $LINENO
-#
-## Kernel Samepage Merging (KSM)
-## -----------------------------
-#
-## Processes that mark their memory as mergeable can share identical memory
-## pages if KSM is enabled. This is particularly useful for nova + libvirt
-## backends but any other setup that marks its memory as mergeable can take
-## advantage. The drawback is there is higher cpu load; however, we tend to
-## be memory bound not cpu bound so enable KSM by default but allow people
-## to opt out if the CPU time is more important to them.
-#
-#if [[ $ENABLE_KSM == "True" ]] ; then
-#    if [[ -f /sys/kernel/mm/ksm/run ]] ; then
-#        sudo sh -c "echo 1 > /sys/kernel/mm/ksm/run"
-#    fi
-#fi
-#
-#
-## Start Services
-## ==============
-#
-## Dstat
-## -----
-#
-## A better kind of sysstat, with the top process per time slice
-#start_dstat
-#
-## Run a background tcpdump for debugging
-## Note: must set TCPDUMP_ARGS with the enabled service
-#if is_service_enabled tcpdump; then
-#    start_tcpdump
-#fi
-#
-## Etcd
-## -----
-#
-## etcd is a distributed key value store that provides a reliable way to store data across a cluster of machines
-#if is_service_enabled etcd3; then
-#    start_etcd3
-#fi
-#
-## Keystone
-## --------
-#
-#if is_service_enabled tls-proxy; then
-#    start_tls_proxy http-services '*' 443 $SERVICE_HOST 80
-#fi
-#
-## Write a clouds.yaml file and use the devstack-admin cloud
-#write_clouds_yaml
-#export OS_CLOUD=${OS_CLOUD:-devstack-admin}
-#
+
+# Save configuration values
+save_stackenv $LINENO
+
+# ---------------------------------------------------------------------------------------- KERNEL SAMEPAGE MERGING (KSM)
+# Processes that mark their memory as mergeable can share identical memory pages if KSM is enabled. This is particularly
+# useful for nova + libvirt backends but any other setup that marks its memory as mergeable can take advantage. The
+# drawback is there is higher cpu load; however, we tend to be memory bound not cpu bound so enable KSM by default but
+# allow people to opt out if the CPU time is more important to them.
+if [[ $ENABLE_KSM == "True" ]]; then
+  if [[ -f /sys/kernel/mm/ksm/run ]]; then
+    sudo sh -c "echo 1 > /sys/kernel/mm/ksm/run"
+  fi
+fi
+
+# ------------------------------------------------------------------------------------------------------- START SERVICES
+# Dstat, a better kind of sysstat, with the top process per time slice
+start_dstat
+
+# Run a background tcpdump for debugging. Note: must set TCPDUMP_ARGS with the enabled service
+if is_service_enabled tcpdump; then
+  start_tcpdump
+fi
+
+# ---------------------------------------------------------------------------------------------------------------- ETCD3
+# etcd is a distributed key value store that provides a reliable way to store data across a cluster of machines
+if is_service_enabled etcd3; then
+  start_etcd3
+fi
+
+# ------------------------------------------------------------------------------------------------------------- KEYSTONE
+if is_service_enabled tls-proxy; then
+  start_tls_proxy http-services '*' 443 $SERVICE_HOST 80
+fi
+
+# Write a clouds.yaml file and use the devstack-admin cloud
+write_clouds_yaml
+export OS_CLOUD=${OS_CLOUD:-devstack-admin}
+
 #if is_service_enabled keystone; then
 #    echo_summary "Starting Keystone"
 #
