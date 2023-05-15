@@ -65,8 +65,8 @@ function cleanup_database_mysql {
 function recreate_database_mysql {
   local db=$1
   if is_equal_to $DOCKERIZED_DATABASE True; then
-    docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -e "DROP DATABASE IF EXISTS $db;"
-    docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -e "CREATE DATABASE $db CHARACTER SET utf8;"
+    docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "DROP DATABASE IF EXISTS $db;"
+    docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "CREATE DATABASE $db CHARACTER SET utf8;"
   else
     mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "DROP DATABASE IF EXISTS $db;"
     mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "CREATE DATABASE $db CHARACTER SET utf8;"
@@ -118,7 +118,7 @@ function configure_database_mysql {
     local cmd_args="-uroot -p$DATABASE_PASSWORD "
   else
     if is_equal_to $DOCKERIZED_DATABASE True; then
-      local cmd_args="docker exec openstack-mysql mysql -uroot -p$DATABASE_PASSWORD "
+      local cmd_args="docker exec openstack-mysql mysql -uroot -p$DATABASE_PASSWORD -h$SERVICE_LOCAL_HOST "
     else
       local cmd_args="-uroot -p$DATABASE_PASSWORD -h$SERVICE_LOCAL_HOST "
     fi
@@ -180,11 +180,11 @@ function configure_database_mysql {
     # Create our stats database for accounting
     recreate_database stats
     if is_equal_to $DOCKERIZED_DATABASE True; then
-      docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -e \
+      docker exec openstack-mysql mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e \
         "CREATE TABLE queries (db VARCHAR(32), op VARCHAR(32),
                 count INT, PRIMARY KEY (db, op)) ENGINE MEMORY" stats
     else
-      mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST -e \
+      mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e \
         "CREATE TABLE queries (db VARCHAR(32), op VARCHAR(32),
                 count INT, PRIMARY KEY (db, op)) ENGINE MEMORY" stats
     fi

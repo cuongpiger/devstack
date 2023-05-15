@@ -116,7 +116,7 @@ function _run_etcd3_inside_docker {
     :
   else
     echo "Container '$container_name' does not exist. Creating and starting..."
-    docker run --name "$container_name" --network host xieyanze/etcd3:latest
+    docker run -d --name "$container_name" --network host xieyanze/etcd3:latest
   fi
 }
 
