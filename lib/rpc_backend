@@ -51,19 +51,23 @@ function _run_rabbitmq_inside_docker {
   local container_name=$1 # container name should be openstack-rabbitmq
   # Check if the container exists
   if docker inspect "$container_name" >/dev/null 2>&1; then
-    docker container restart "$container_name"
-  else
-    echo "Container '$container_name' does not exist. Creating and starting..."
-    docker run -d --name "$container_name" --network host bitnami/rabbitmq:3.11.15
+    docker container rm -f "$container_name"
+    for i in {1..10}; do
+      if docker exec "$container_name" rabbitmqctl list_users >/dev/null 2>&1; then
+        break
+      fi
+      sleep 3
+    done
   fi
+  echo "Container '$container_name' does not exist. Creating and starting..."
+  docker run -d --name "$container_name" --network host bitnami/rabbitmq:3.11.15
 
   # Wait for the RabbitMQ container to start
   for i in {1..10}; do
     if docker exec "$container_name" rabbitmqctl list_users >/dev/null 2>&1; then
       break
-    else
-      sleep 3
     fi
+    sleep 3
   done
 }
 
