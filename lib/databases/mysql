@@ -209,14 +209,25 @@ function configure_database_mysql {
 
 function _run_mysql_db_inside_docker {
   local container_name=$1
-
   # Check if the container exists
   if docker inspect "$container_name" >/dev/null 2>&1; then
-    :
-  else
-    echo "Container '$container_name' does not exist. Creating and starting..."
-    docker run --name "$container_name" --network host -e MYSQL_ROOT_PASSWORD=$DATABASE_PASSWORD -d mysql:8
+    docker container rm -f "$container_name"
+    for i in {1..10}; do
+      if docker exec "$container_name" mysql -uroot -p$DATABASE_PASSWORD -e "SELECT 1;" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 3
+    done
   fi
+
+  echo "Container '$container_name' does not exist. Creating and starting..."
+  docker run --name "$container_name" --network host -e MYSQL_ROOT_PASSWORD=$DATABASE_PASSWORD -d mysql:8
+  for i in {1..10}; do
+    if docker exec "$container_name" mysql -uroot -p$DATABASE_PASSWORD -e "SELECT 1;" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 3
+  done
 }
 
 function install_database_mysql {
@@ -226,6 +237,7 @@ mysql-server mysql-server/root_password password $DATABASE_PASSWORD
 mysql-server mysql-server/root_password_again password $DATABASE_PASSWORD
 mysql-server mysql-server/start_on_boot boolean true
 MYSQL_PRESEED
+
     local docker_db_name="openstack-mysql"
     if [[ ! -e $HOME/.my.cnf ]]; then
       cat <<EOF >$HOME/.my.cnf

@@ -62,7 +62,7 @@ function _run_rabbitmq_inside_docker {
     if docker exec "$container_name" rabbitmqctl list_users >/dev/null 2>&1; then
       break
     else
-      sleep 1
+      sleep 3
     fi
   done
 }
