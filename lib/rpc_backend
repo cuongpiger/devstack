@@ -53,7 +53,7 @@ function _run_rabbitmq_inside_docker {
   if docker inspect "$container_name" >/dev/null 2>&1; then
     docker container rm -f "$container_name"
     for i in {1..10}; do
-      if docker exec "$container_name" rabbitmqctl list_users >/dev/null 2>&1; then
+      if ! docker exec "$container_name" rabbitmqctl list_users >/dev/null 2>&1; then
         break
       fi
       sleep 3

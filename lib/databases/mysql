@@ -225,7 +225,7 @@ function _run_mysql_db_inside_docker {
   if docker inspect "$container_name" >/dev/null 2>&1; then
     docker container rm -f "$container_name"
     for i in {1..10}; do
-      if docker exec "$container_name" mysql -uroot -p$DATABASE_PASSWORD -e "SELECT 1;" >/dev/null 2>&1; then
+      if ! docker exec "$container_name" mysql -uroot -p$DATABASE_PASSWORD -e "SELECT 1;" >/dev/null 2>&1; then
         break
       fi
       sleep 3
