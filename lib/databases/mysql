@@ -97,10 +97,10 @@ function configure_database_mysql {
   if is_equal_to $DOCKERIZED_DATABASE True; then
     docker container restart openstack-mysql
     for i in {1..10}; do
-      if docker exec openstack-mysql; then
+      if docker exec openstack-mysql mysql -uroot -p$DATABASE_PASSWORD -e "SELECT 1;"; then
         break
       fi
-      sleep 1
+      sleep 3
     done
   else
     # (Re)Start mysql-server
