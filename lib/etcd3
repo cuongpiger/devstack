@@ -113,11 +113,22 @@ function _run_etcd3_inside_docker {
 
   # Check if the container exists
   if docker inspect "$container_name" >/dev/null 2>&1; then
-    :
-  else
-    echo "Container '$container_name' does not exist. Creating and starting..."
-    docker run -d --name "$container_name" --network host xieyanze/etcd3:latest
+    docker container rm -f "$container_name"
+    for i in $(seq 1 10); do
+      if ! docker inspect "$container_name" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 3
+    done
   fi
+  echo "Container '$container_name' does not exist. Creating and starting..."
+  docker run -d --name "$container_name" --network host xieyanze/etcd3:latest
+  for i in $(seq 1 10); do
+    if docker exec "$container_name" etcd --version >/dev/null 2>&1; then
+      break
+    fi
+    sleep 3
+  done
 }
 
 function install_etcd3 {
@@ -125,7 +136,6 @@ function install_etcd3 {
   if is_equal_to $DOCKERIZED_ETCD3 True; then
     local docker_etcd3_name="openstack-etcd3"
     _run_etcd3_inside_docker "$docker_etcd3_name"
-    typeset -xr docker_etcd3_name
   else
     # Create the necessary directories
     sudo mkdir -p $ETCD_BIN_DIR
