@@ -1277,9 +1277,9 @@ if is_service_enabled mysql; then
     echo ""
     echo ""
     echo "Post-stack database query stats:"
-    mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
+    docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
       'SELECT * FROM queries' -t 2>/dev/null
-    mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
+    docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
       'DELETE FROM queries' 2>/dev/null
   fi
 fi
