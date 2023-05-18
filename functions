@@ -472,6 +472,12 @@ function wait_for_service {
   local url=$2
   local rval=0
   time_start "wait_for_service"
+
+  # check apache2 is running, if not start it
+  if ! systemctl is-active --quiet apache2; then
+    sudo systemctl start apache2
+  fi
+
   timeout $timeout bash -x <<EOF || rval=$?
         while [[ \$( ${CURL_GET} -k --noproxy '*' -s -o /dev/null -w '%{http_code}' ${url} ) == 503 || \$? -eq 7 ]]; do
             sleep 1

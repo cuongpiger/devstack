@@ -186,3 +186,4 @@ rm -Rf $DEST/async
 # gitconfig. We can identify the relevant ones by checking that they
 # point to somewhere in our $DEST directory.
 sudo sed -i "\+directory = ${DEST}+ d" /etc/gitconfig
+sudo rm -rf $OVS_RUNDIR $OVN_RUNDIR
