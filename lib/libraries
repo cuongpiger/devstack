@@ -19,7 +19,6 @@
 _XTRACE_LIB_LIBRARIES=$(set +o | grep xtrace)
 set +o xtrace
 
-
 # Defaults
 # --------
 GITDIR["automaton"]=$DEST/automaton
@@ -66,78 +65,85 @@ GITDIR["os-traits"]=$DEST/os-traits
 # Support entry points installation of console scripts
 OSLO_BIN_DIR=$(get_python_exec_prefix)
 
-
 # Functions
 # ---------
 
 function _install_lib_from_source {
-    local name=$1
-    if use_library_from_git "$name"; then
-        git_clone_by_name "$name"
-        setup_dev_lib -bindep "$name"
+  local name=$1
+  if use_library_from_git "$name"; then
+    git_clone_by_name "$name"
+
+    # [cuongdm]
+    # - Sometimes, you want to customize the OpenStack libraries, such as osprofiler, oslo.log, oslo.config, etc. To do
+    # that, you must install the libraries in editable mode. This function will help you do that by ignoring the
+    # `-bindep` flag.
+    if [[ "$LIB_WITH_EDITABLE_MODE" =~ $name ]]; then
+      setup_dev_lib "$name" # install the library in editable mode at $DEST/$name
+    else
+      setup_dev_lib -bindep "$name" # install the library at the Python dist-packages directory
     fi
+  fi
 }
 
 # install_oslo - install libraries that oslo needs
 function install_oslo {
-    install_libs
+  install_libs
 }
 
 # install_libs() - Install additional libraries that we need and want
 # on all environments. Some will only install here if from source,
 # others will always install.
 function install_libs {
-    _install_lib_from_source "automaton"
-    _install_lib_from_source "castellan"
-    _install_lib_from_source "cliff"
-    _install_lib_from_source "cursive"
-    _install_lib_from_source "debtcollector"
-    _install_lib_from_source "futurist"
-    _install_lib_from_source "openstacksdk"
-    _install_lib_from_source "osc-lib"
-    _install_lib_from_source "osc-placement"
-    _install_lib_from_source "os-client-config"
-    _install_lib_from_source "oslo.cache"
-    _install_lib_from_source "oslo.concurrency"
-    _install_lib_from_source "oslo.config"
-    _install_lib_from_source "oslo.context"
-    _install_lib_from_source "oslo.db"
-    _install_lib_from_source "oslo.i18n"
-    _install_lib_from_source "oslo.limit"
-    _install_lib_from_source "oslo.log"
-    _install_lib_from_source "oslo.messaging"
-    _install_lib_from_source "oslo.middleware"
-    _install_lib_from_source "oslo.policy"
-    _install_lib_from_source "oslo.privsep"
-    _install_lib_from_source "oslo.reports"
-    _install_lib_from_source "oslo.rootwrap"
-    _install_lib_from_source "oslo.serialization"
-    _install_lib_from_source "oslo.service"
-    _install_lib_from_source "oslo.utils"
-    _install_lib_from_source "oslo.versionedobjects"
-    _install_lib_from_source "oslo.vmware"
-    _install_lib_from_source "osprofiler"
-    _install_lib_from_source "pycadf"
-    _install_lib_from_source "stevedore"
-    _install_lib_from_source "taskflow"
-    _install_lib_from_source "tooz"
-    # installation of additional libraries
-    #
-    # os-traits for nova
-    _install_lib_from_source "os-brick"
-    _install_lib_from_source "os-resource-classes"
-    _install_lib_from_source "os-traits"
-    #
-    # python client libraries we might need from git can go here
-    _install_lib_from_source "python-barbicanclient"
+  _install_lib_from_source "automaton"
+  _install_lib_from_source "castellan"
+  _install_lib_from_source "cliff"
+  _install_lib_from_source "cursive"
+  _install_lib_from_source "debtcollector"
+  _install_lib_from_source "futurist"
+  _install_lib_from_source "openstacksdk"
+  _install_lib_from_source "osc-lib"
+  _install_lib_from_source "osc-placement"
+  _install_lib_from_source "os-client-config"
+  _install_lib_from_source "oslo.cache"
+  _install_lib_from_source "oslo.concurrency"
+  _install_lib_from_source "oslo.config"
+  _install_lib_from_source "oslo.context"
+  _install_lib_from_source "oslo.db"
+  _install_lib_from_source "oslo.i18n"
+  _install_lib_from_source "oslo.limit"
+  _install_lib_from_source "oslo.log"
+  _install_lib_from_source "oslo.messaging"
+  _install_lib_from_source "oslo.middleware"
+  _install_lib_from_source "oslo.policy"
+  _install_lib_from_source "oslo.privsep"
+  _install_lib_from_source "oslo.reports"
+  _install_lib_from_source "oslo.rootwrap"
+  _install_lib_from_source "oslo.serialization"
+  _install_lib_from_source "oslo.service"
+  _install_lib_from_source "oslo.utils"
+  _install_lib_from_source "oslo.versionedobjects"
+  _install_lib_from_source "oslo.vmware"
+  _install_lib_from_source "osprofiler"
+  _install_lib_from_source "pycadf"
+  _install_lib_from_source "stevedore"
+  _install_lib_from_source "taskflow"
+  _install_lib_from_source "tooz"
+  # installation of additional libraries
+  #
+  # os-traits for nova
+  _install_lib_from_source "os-brick"
+  _install_lib_from_source "os-resource-classes"
+  _install_lib_from_source "os-traits"
+  #
+  # python client libraries we might need from git can go here
+  _install_lib_from_source "python-barbicanclient"
 
-
-    # etcd (because tooz does not have a hard dependency on these)
-    #
-    # NOTE(sdague): this is currently a work around because tooz
-    # doesn't pull in etcd3.
-    pip_install etcd3
-    pip_install etcd3gw
+  # etcd (because tooz does not have a hard dependency on these)
+  #
+  # NOTE(sdague): this is currently a work around because tooz
+  # doesn't pull in etcd3.
+  pip_install etcd3
+  pip_install etcd3gw
 }
 
 # Restore xtrace
