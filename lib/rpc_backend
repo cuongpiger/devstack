@@ -113,22 +113,30 @@ function restart_rpc_backend {
   if is_service_enabled rabbit; then
     if is_equal_to $DOCKERIZED_RPC "True"; then
       echo_summary "Starting RabbitMQ"
-      out=$(docker exec "$docker_rpc_name" rabbitmqctl list_users) ||
+      local container_name="openstack-rabbitmq"
+      # waiting rabbitmq to start
+      for i in {1..10}; do
+        if docker exec "$container_name" rabbitmqctl list_users >/dev/null 2>&1; then
+          break
+        fi
+        sleep 3
+      done
+      out=$(docker exec "$container_name" rabbitmqctl list_users) ||
         {
           echo "failed to list users" 1>&2
           return 1
         }
       found=$(echo "$out" | awk '$1 == user { print $1 }' "user=$RABBIT_USERID")
       if [ "$found" = "$RABBIT_USERID" ]; then
-        docker exec "$docker_rpc_name" rabbitmqctl change_password "$RABBIT_USERID" "$RABBIT_PASSWORD" ||
+        docker exec "$container_name" rabbitmqctl change_password "$RABBIT_USERID" "$RABBIT_PASSWORD" ||
           {
             echo "failed changing pass for '$user'" 1>&2
             return 1
           }
       else
-        docker exec "$docker_rpc_name" rabbitmqctl add_user "$RABBIT_USERID" "$RABBIT_PASSWORD"
+        docker exec "$container_name" rabbitmqctl add_user "$RABBIT_USERID" "$RABBIT_PASSWORD"
       fi
-      docker exec "$docker_rpc_name" rabbitmqctl set_permissions "$RABBIT_USERID" ".*" ".*" ".*"
+      docker exec "$container_name" rabbitmqctl set_permissions "$RABBIT_USERID" ".*" ".*" ".*"
     else
       # Start rabbitmq-server
       # NOTE(bnemec): Retry initial rabbitmq configuration to deal with

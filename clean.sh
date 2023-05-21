@@ -147,3 +147,5 @@ rm -rf ~/.config/openstack
 
 # Clear any fstab entries made
 sudo sed -i '/.*comment=devstack-.*/ d' /etc/fstab
+docker container rm -f openstack-mysql openstack-etcd3 openstack-jaeger openstack-rabbitmq
+docker volume prune -f
