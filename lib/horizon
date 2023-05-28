@@ -146,7 +146,9 @@ function init_horizon {
 
     # Setup alias for django-admin which could be different depending on distro
     local django_admin
-    if type -p django-admin > /dev/null; then
+    if is_equal_to $CONDA_ENABLED True; then
+        django_admin=/home/${USER}/anaconda3/envs/${CONDA_ENV_NAME}/bin/django-admin
+    elif type -p django-admin > /dev/null; then
         django_admin=django-admin
     else
         django_admin=django-admin.py
