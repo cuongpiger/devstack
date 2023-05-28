@@ -181,11 +181,11 @@ function configure_database_mysql {
     echo "enabling MySQL performance counting"
 
     # Install our sqlalchemy plugin
-    sudo rm -rf /usr/local/lib/python3.8/dist-packages/OpenSSL
+#    sudo rm -rf /usr/local/lib/python3.8/dist-packages/OpenSSL
     pip_install ${TOP_DIR}/tools/dbcounter
-    sudo rm -rf /usr/local/lib/python3.8/dist-packages/pyOpenSSL-22.1.0.dist-info/
-    sudo pip3 uninstall pyOpenSSL
-    sudo pip3 install pyOpenSSL===23.1.1 -y
+#    sudo rm -rf /usr/local/lib/python3.8/dist-packages/pyOpenSSL-22.1.0.dist-info/
+#    sudo pip3 uninstall pyOpenSSL
+#    sudo pip3 install pyOpenSSL===23.1.1 -y
     
 
     # Create our stats database for accounting

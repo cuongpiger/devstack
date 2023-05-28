@@ -42,6 +42,8 @@ KEYSTONE_DIR=$DEST/keystone
 if [[ ${USE_VENV} = True ]]; then
   PROJECT_VENV["keystone"]=${KEYSTONE_DIR}.venv
   KEYSTONE_BIN_DIR=${PROJECT_VENV["keystone"]}/bin
+elif [[ ${CONDA_ENABLED} = True ]]; then
+  KEYSTONE_BIN_DIR=/home/${USER}/anaconda3/envs/${CONDA_ENV_NAME}/bin
 else
   KEYSTONE_BIN_DIR=$(get_python_exec_prefix)
 fi
@@ -557,7 +559,12 @@ function start_keystone {
     enable_apache_site keystone
     restart_apache_server
   else # uwsgi
-    run_process keystone "$(which uwsgi) --procname-prefix keystone --ini $KEYSTONE_PUBLIC_UWSGI_CONF" ""
+    if is_equal_to $CONDA_ENABLED True; then
+      local uwsgi_runtime=$KEYSTONE_BIN_DIR/uwsgi
+      run_process keystone "$uwsgi_runtime --procname-prefix keystone --ini $KEYSTONE_PUBLIC_UWSGI_CONF" ""
+    else
+      run_process keystone "$(which uwsgi) --procname-prefix keystone --ini $KEYSTONE_PUBLIC_UWSGI_CONF" ""
+    fi
   fi
 
   echo "Waiting for keystone to start..."

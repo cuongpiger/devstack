@@ -1206,7 +1206,14 @@ service_check
 # Do this late because it requires compute hosts to have started
 if is_service_enabled n-api; then
   if is_service_enabled n-cpu; then
-    $TOP_DIR/tools/discover_hosts.sh
+    #    $TOP_DIR/tools/discover_hosts.sh
+    if [[ -x $(which nova-manage) ]]; then
+      if [[ ${CONDA_ENABLED} = True ]]; then
+        $NOVA_BIN_DIR/nova-manage cell_v2 discover_hosts --verbose
+      else
+        nova-manage cell_v2 discover_hosts --verbose
+      fi
+    fi
   else
     # Some CI systems like Hyper-V build the control plane on
     # Linux, and join in non Linux Computes after setup. This

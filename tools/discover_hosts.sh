@@ -15,6 +15,12 @@
 # In other words this should be run on the primary
 # (API) node in a multi-node setup.
 
+# Import common functions
+
 if [[ -x $(which nova-manage) ]]; then
+  if [[ ${CONDA_ENABLED} = True ]] ; then
+    $NOVA_BIN_DIR/nova-manage cell_v2 discover_hosts --verbose
+  else
     nova-manage cell_v2 discover_hosts --verbose
+  fi
 fi
