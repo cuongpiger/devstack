@@ -18,9 +18,5 @@
 # Import common functions
 
 if [[ -x $(which nova-manage) ]]; then
-  if [[ ${CONDA_ENABLED} = True ]] ; then
-    $NOVA_BIN_DIR/nova-manage cell_v2 discover_hosts --verbose
-  else
-    nova-manage cell_v2 discover_hosts --verbose
-  fi
+  nova-manage cell_v2 discover_hosts --verbose
 fi

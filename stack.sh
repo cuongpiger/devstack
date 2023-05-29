@@ -1206,12 +1206,11 @@ service_check
 # Do this late because it requires compute hosts to have started
 if is_service_enabled n-api; then
   if is_service_enabled n-cpu; then
-    #    $TOP_DIR/tools/discover_hosts.sh
     if [[ -x $(which nova-manage) ]]; then
       if [[ ${CONDA_ENABLED} = True ]]; then
         $NOVA_BIN_DIR/nova-manage cell_v2 discover_hosts --verbose
       else
-        nova-manage cell_v2 discover_hosts --verbose
+        $TOP_DIR/tools/discover_hosts.sh
       fi
     fi
   else

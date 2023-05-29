@@ -61,7 +61,11 @@ function get_python_exec_prefix {
   $xtrace
 
   local PYTHON_PATH=/usr/local/bin
-  is_suse && PYTHON_PATH=/usr/bin
+  if is_equal_to $CONDA_ENABLED True; then
+    PYTHON_PATH=home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin
+  else
+    is_suse && PYTHON_PATH=/usr/bin
+  fi
   echo $PYTHON_PATH
 }
 
