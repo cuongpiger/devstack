@@ -683,10 +683,15 @@ sudo systemctl restart systemd-journald
 install_infra
 
 # Install bindep
-$VIRTUALENV_CMD $DEST/bindep-venv
-# TODO(ianw) : optionally install from zuul checkout?
-$DEST/bindep-venv/bin/pip install bindep
-export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep
+if [[ $CONDA_ENABLED = True ]]; then
+  pip_install bindep
+  export BINDEP_CMD=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/bindep
+else
+  $VIRTUALENV_CMD $DEST/bindep-venv
+  # TODO(ianw) : optionally install from zuul checkout?
+  $DEST/bindep-venv/bin/pip install bindep
+  export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep
+fi
 
 # Install packages as defined in plugin bindep.txt files
 pkgs="$(_get_plugin_bindep_packages)"
@@ -961,385 +966,385 @@ fi
 async_wait create_nova_accounts create_glance_accounts create_cinder_accounts
 async_wait create_neutron_accounts create_swift_accounts configure_horizon
 
-# --------------------------------------------------------------------------------------------------------------- GLANCE
-# NOTE(yoctozepto): limited to node hosting the database which is the controller
-if is_service_enabled $DATABASE_BACKENDS && is_service_enabled glance; then
-  echo_summary "Configuring Glance"
-  async_runfunc init_glance
-fi
-
-# -------------------------------------------------------------------------------------------------------------- NEUTRON
-if is_service_enabled neutron; then
-  echo_summary "Configuring Neutron"
-
-  configure_neutron
-
-  # Run init_neutron only on the node hosting the Neutron API server
-  if is_service_enabled $DATABASE_BACKENDS && is_service_enabled neutron; then
-    async_runfunc init_neutron
-  fi
-fi
-
-# ----------------------------------------------------------------------------------------------------------------- NOVA
-if is_service_enabled q-dhcp; then
-  # TODO(frickler): These are remnants from n-net, check which parts are really
-  # still needed for Neutron.
-  # Do not kill any dnsmasq instance spawned by NetworkManager
-  netman_pid=$(pidof NetworkManager || true)
-  if [ -z "$netman_pid" ]; then
-    sudo killall dnsmasq || true
-  else
-    sudo ps h -o pid,ppid -C dnsmasq | grep -v $netman_pid | awk '{print $1}' | sudo xargs kill || true
-  fi
-
-  clean_iptables
-
-  # Force IP forwarding on, just in case
-  sudo sysctl -w net.ipv4.ip_forward=1
-fi
-
-# --------------------------------------------------------------------------------------------------------------- OS-VIF
-if is_service_enabled nova neutron; then
-  configure_os_vif
-fi
-
-# ------------------------------------------------------------------------------------------------------ STORAGE SERVICE
-if is_service_enabled swift; then
-  echo_summary "Configuring Swift"
-  async_runfunc init_swift
-fi
-
-# ------------------------------------------------------------------------------------------------------- VOLUME SERVICE
-if is_service_enabled cinder; then
-  echo_summary "Configuring Cinder"
-  async_runfunc init_cinder
-fi
-
-# ---------------------------------------------------------------------------------------------------- PLACEMENT SERVICE
-if is_service_enabled placement; then
-  echo_summary "Configuring placement"
-  async_runfunc init_placement
-fi
-
-# Wait for neutron and placement before starting nova
-async_wait init_neutron
-async_wait init_placement
-async_wait init_glance
-async_wait init_swift
-async_wait init_cinder
-
-# ------------------------------------------------------------------------------------------------------ COMPUTE SERVICE
-if is_service_enabled nova; then
-  echo_summary "Configuring Nova"
-  init_nova
-
-  async_runfunc configure_neutron_nova
-fi
-
-# ------------------------------------------------------------------------------------------------ EXTRAS CONFIGURATIONS
-# Phase: post-config
-run_phase stack post-config
-
-# -------------------------------------------------------------------------------------------------- LOCAL CONFIGURATION
-# Apply configuration from ``local.conf`` if it exists for layer 2 services
-# Phase: post-config
-merge_config_group $TOP_DIR/local.conf post-config
-
-# ------------------------------------------------------------------------------------------------------ LAUNCH SERVICES
-# Only run the services specified in `ENABLED_SERVICES`
-
-# Launch Swift Services
-if is_service_enabled swift; then
-  echo_summary "Starting Swift"
-  start_swift
-fi
-
-# NOTE(lyarwood): By default use a single hardcoded fixed_key across devstack deployments. This ensures the keys match
-# across nova and cinder across all hosts.
-FIXED_KEY=${FIXED_KEY:-bae3516cc1c0eb18b05440eba8012a4a880a2ee04d584a9c1579445e675b12defdc716ec}
-if is_service_enabled cinder; then
-  iniset $CINDER_CONF key_manager fixed_key "$FIXED_KEY"
-fi
-
-async_wait configure_neutron_nova
-
-# NOTE(clarkb): This must come after async_wait configure_neutron_nova because configure_neutron_nova modifies
-# $NOVA_CONF and $NOVA_CPU_CONF as well. If we don't wait then these two ini updates race either other and can result in
-# unexpected configs.
-if is_service_enabled nova; then
-  iniset $NOVA_CONF key_manager fixed_key "$FIXED_KEY"
-  iniset $NOVA_CPU_CONF key_manager fixed_key "$FIXED_KEY"
-fi
-
-# Launch the nova-api and wait for it to answer before continuing
-if is_service_enabled n-api; then
-  echo_summary "Starting Nova API"
-  start_nova_api
-fi
-
-if is_service_enabled ovn-controller ovn-controller-vtep; then
-  echo_summary "Starting OVN services"
-  start_ovn_services
-fi
-
-if is_service_enabled neutron-api; then
-  echo_summary "Starting Neutron"
-  start_neutron_api
-elif is_service_enabled q-svc; then
-  echo_summary "Starting Neutron"
-  configure_neutron_after_post_config
-  start_neutron_service_and_check
-fi
-
-# Start placement before any of the service that are likely to want to use it to manage resource providers.
-if is_service_enabled placement; then
-  echo_summary "Starting Placement"
-  start_placement
-fi
-
-if is_service_enabled neutron; then
-  start_neutron
-fi
-
-# Once neutron agents are started setup initial network elements
-if is_service_enabled q-svc && [[ "$NEUTRON_CREATE_INITIAL_NETWORKS" == "True" ]]; then
-  echo_summary "Creating initial neutron network elements"
-  # Here's where plugins can wire up their own networks instead of the code in lib/neutron_plugins/services/l3
-  if type -p neutron_plugin_create_initial_networks >/dev/null; then
-    neutron_plugin_create_initial_networks
-  else
-    create_neutron_initial_network
-  fi
-
-fi
-
-if is_service_enabled nova; then
-  echo_summary "Starting Nova"
-  start_nova
-  async_runfunc create_flavors
-fi
-if is_service_enabled cinder; then
-  echo_summary "Starting Cinder"
-  start_cinder
-  create_volume_types
-fi
-
-# This sleep is required for cinder volume service to become active and publish capabilities to cinder scheduler before
-# creating the image-volume
-if [[ "$USE_CINDER_FOR_GLANCE" == "True" ]]; then
-  sleep 30
-fi
-
-# Launch the Glance services
-# NOTE (abhishekk): We need to start glance api service only after cinder service has started as on glance startup
-# glance-api queries cinder for validating volume_type configured for cinder store of glance.
-if is_service_enabled glance; then
-  echo_summary "Starting Glance"
-  start_glance
-fi
-
-# ------------------------------------------------------------------------------------------------------- INSTALL IMAGES
-# Upload an image to Glance.
-# The default image is CirrOS, a small testing image which lets you login as root CirrOS has a `cloud-init` analog
-# supporting login via keypair and sending scripts as userdata.
-# See https://help.ubuntu.com/community/CloudInit for more on ``cloud-init``
-
-# NOTE(yoctozepto): limited to node hosting the database which is the controller
-if is_service_enabled $DATABASE_BACKENDS && is_service_enabled glance; then
-  echo_summary "Uploading images"
-
-  for image_url in ${IMAGE_URLS//,/ }; do
-    upload_image $image_url
-  done
-fi
-
-async_wait create_flavors
-
-if is_service_enabled horizon; then
-  echo_summary "Starting Horizon"
-  init_horizon
-  start_horizon
-fi
-
-# ---------------------------------------------------------------------------------------------- CREATE ACCOUNT RC FILES
-# Creates source able script files for easier user switching.
-# This step also creates certificates for tenants and users, which is helpful in image bundle steps.
-if is_service_enabled nova && is_service_enabled keystone; then
-  USERRC_PARAMS="-PA --target-dir $TOP_DIR/accrc --os-password $ADMIN_PASSWORD"
-
-  if [ -f $SSL_BUNDLE_FILE ]; then
-    USERRC_PARAMS="$USERRC_PARAMS --os-cacert $SSL_BUNDLE_FILE"
-  fi
-
-  $TOP_DIR/tools/create_userrc.sh $USERRC_PARAMS
-fi
-
-# Save some values we generated for later use
-save_stackenv
-
-# ------------------------------------------------------------------------------------------------- WRAPUP CONFIGURATION
-# local.conf extra
-# Apply configuration from ``local.conf`` if it exists for layer 2 services
-# Phase: extra
-merge_config_group $TOP_DIR/local.conf extra
-
-# ----------------------------------------------------------------------------------------------------------- RUN EXTRAS
-# Phase: extra
-run_phase stack extra
-
-# local.conf post-extra
-# Apply late configuration from ``local.conf`` if it exists for layer 2 services
-# Phase: post-extra
-merge_config_group $TOP_DIR/local.conf post-extra
-
-# -------------------------------------------------------------------------------------------------------- SANITY CHECKS
-# Check that computes are all ready
-# TODO(sdague): there should be some generic phase here.
-if is_service_enabled n-cpu; then
-  is_nova_ready
-fi
-
-# Check the status of running services
-service_check
-
-# ----------------------------------------------------------------------------------------------- CONFIGURE NOVA CELLLV2
-# Do this late because it requires compute hosts to have started
-if is_service_enabled n-api; then
-  if is_service_enabled n-cpu; then
-    if [[ -x $(which nova-manage) ]]; then
-      if [[ ${CONDA_ENABLED} = True ]]; then
-        $NOVA_BIN_DIR/nova-manage cell_v2 discover_hosts --verbose
-      else
-        $TOP_DIR/tools/discover_hosts.sh
-      fi
-    fi
-  else
-    # Some CI systems like Hyper-V build the control plane on
-    # Linux, and join in non Linux Computes after setup. This
-    # allows them to delay the processing until after their whole
-    # environment is up.
-    echo_summary "SKIPPING Cell setup because n-cpu is not enabled. You will have to do this manually before you have a working environment."
-  fi
-  # Run the nova-status upgrade check command which can also be used
-  # to verify the base install. Note that this is good enough in a
-  # single node deployment, but in a multi-node setup it won't verify
-  # any subnodes - that would have to be driven from whatever tooling
-  # is deploying the subnodes, e.g. the zuul v3 devstack-multinode job.
-  $NOVA_BIN_DIR/nova-status --config-file $NOVA_CONF upgrade check
-fi
-
-# ------------------------------------------------------------------------------------------------------ RUN LOCAL SCRIPT
-# Run ``local.sh`` if it exists to perform user-managed tasks
-if [[ -x $TOP_DIR/local.sh ]]; then
-  echo "Running user script $TOP_DIR/local.sh"
-  $TOP_DIR/local.sh
-fi
-
-# ---------------------------------------------------------------------------------------------------- BASH COMPLETETION
-# Prepare bash completion for OSC
-# Note we use "command" to avoid the timing wrapper which isn't relevant here and floods logs
-command openstack complete |
-  sudo tee /etc/bash_completion.d/osc.bash_completion >/dev/null
-
-# If cinder is configured, set global_filter for PV devices
-if is_service_enabled cinder; then
-  if is_ubuntu; then
-    echo_summary "Configuring lvm.conf global device filter"
-    set_lvm_filter
-  else
-    echo_summary "Skip setting lvm filters for non Ubuntu systems"
-  fi
-fi
-
-# ------------------------------------------------------------------------------------------------------ RUN TEST-CONFIG
-# Phase: test-config
-run_phase stack test-config
-
-# Apply late configuration from ``local.conf`` if it exists for layer 2 services
-# Phase: test-config
-merge_config_group $TOP_DIR/local.conf test-config
-
-# ------------------------------------------------------------------------------------------------------------------ FIN
-set +o xtrace
-
-if [[ -n "$LOGFILE" ]]; then
-  exec 1>&3
-  # Force all output to stdout and logs now
-  exec 1> >(tee -a "${LOGFILE}") 2>&1
-else
-  # Force all output to stdout now
-  exec 1>&3
-fi
-
-# Make sure we didn't leak any background tasks
-async_cleanup
-
-# Dump out the time totals
-time_totals
-async_print_timing
-
-if is_service_enabled mysql; then
-  if [[ "$MYSQL_GATHER_PERFORMANCE" == "True" && "$MYSQL_HOST" ]]; then
-    echo ""
-    echo ""
-    echo "Post-stack database query stats:"
-    if [[ "$DOCKERIZED_DATABASE" == "True" ]]; then
-      docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
-        'SELECT * FROM queries' -t 2>/dev/null
-      docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
-        'DELETE FROM queries' 2>/dev/null
-    else
-      mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
-        'SELECT * FROM queries' -t 2>/dev/null
-      mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
-        'DELETE FROM queries' 2>/dev/null
-    fi
-  fi
-fi
-
-# ------------------------------------------------------------------------------------------------------ USING THE CLOUD
-echo ""
-echo ""
-echo ""
-echo "This is your host IP address: $HOST_IP"
-if [ "$HOST_IPV6" != "" ]; then
-  echo "This is your host IPv6 address: $HOST_IPV6"
-fi
-
-# If you installed Horizon on this server you should be able to access the site using your browser.
-if is_service_enabled horizon; then
-  echo "Horizon is now available at http://$SERVICE_HOST$HORIZON_APACHE_ROOT"
-fi
-
-# If Keystone is present you can point ``nova`` cli to this server
-if is_service_enabled keystone; then
-  echo "Keystone is serving at $KEYSTONE_SERVICE_URI/"
-  echo "The default users are: admin and demo"
-  echo "The password: $ADMIN_PASSWORD"
-fi
-
-# Warn that a deprecated feature was used
-if [[ -n "$DEPRECATED_TEXT" ]]; then
-  echo
-  echo -e "WARNING: $DEPRECATED_TEXT"
-  echo
-fi
-
-echo
-echo "Services are running under systemd unit files."
-echo "For more information see: "
-echo "https://docs.openstack.org/devstack/latest/systemd.html"
-echo
-
-# Useful info on current state
-cat /etc/devstack-version
-echo
-
-# Indicate how long this took to run (bash maintained variable ``SECONDS``)
-echo_summary "stack.sh completed in $SECONDS seconds."
-
-# Restore/close logging file descriptors
-exec 1>&3
-exec 2>&3
-exec 3>&-
-exec 6>&-
+## --------------------------------------------------------------------------------------------------------------- GLANCE
+## NOTE(yoctozepto): limited to node hosting the database which is the controller
+#if is_service_enabled $DATABASE_BACKENDS && is_service_enabled glance; then
+#  echo_summary "Configuring Glance"
+#  async_runfunc init_glance
+#fi
+#
+## -------------------------------------------------------------------------------------------------------------- NEUTRON
+#if is_service_enabled neutron; then
+#  echo_summary "Configuring Neutron"
+#
+#  configure_neutron
+#
+#  # Run init_neutron only on the node hosting the Neutron API server
+#  if is_service_enabled $DATABASE_BACKENDS && is_service_enabled neutron; then
+#    async_runfunc init_neutron
+#  fi
+#fi
+#
+## ----------------------------------------------------------------------------------------------------------------- NOVA
+#if is_service_enabled q-dhcp; then
+#  # TODO(frickler): These are remnants from n-net, check which parts are really
+#  # still needed for Neutron.
+#  # Do not kill any dnsmasq instance spawned by NetworkManager
+#  netman_pid=$(pidof NetworkManager || true)
+#  if [ -z "$netman_pid" ]; then
+#    sudo killall dnsmasq || true
+#  else
+#    sudo ps h -o pid,ppid -C dnsmasq | grep -v $netman_pid | awk '{print $1}' | sudo xargs kill || true
+#  fi
+#
+#  clean_iptables
+#
+#  # Force IP forwarding on, just in case
+#  sudo sysctl -w net.ipv4.ip_forward=1
+#fi
+#
+## --------------------------------------------------------------------------------------------------------------- OS-VIF
+#if is_service_enabled nova neutron; then
+#  configure_os_vif
+#fi
+#
+## ------------------------------------------------------------------------------------------------------ STORAGE SERVICE
+#if is_service_enabled swift; then
+#  echo_summary "Configuring Swift"
+#  async_runfunc init_swift
+#fi
+#
+## ------------------------------------------------------------------------------------------------------- VOLUME SERVICE
+#if is_service_enabled cinder; then
+#  echo_summary "Configuring Cinder"
+#  async_runfunc init_cinder
+#fi
+#
+## ---------------------------------------------------------------------------------------------------- PLACEMENT SERVICE
+#if is_service_enabled placement; then
+#  echo_summary "Configuring placement"
+#  async_runfunc init_placement
+#fi
+#
+## Wait for neutron and placement before starting nova
+#async_wait init_neutron
+#async_wait init_placement
+#async_wait init_glance
+#async_wait init_swift
+#async_wait init_cinder
+#
+## ------------------------------------------------------------------------------------------------------ COMPUTE SERVICE
+#if is_service_enabled nova; then
+#  echo_summary "Configuring Nova"
+#  init_nova
+#
+#  async_runfunc configure_neutron_nova
+#fi
+#
+## ------------------------------------------------------------------------------------------------ EXTRAS CONFIGURATIONS
+## Phase: post-config
+#run_phase stack post-config
+#
+## -------------------------------------------------------------------------------------------------- LOCAL CONFIGURATION
+## Apply configuration from ``local.conf`` if it exists for layer 2 services
+## Phase: post-config
+#merge_config_group $TOP_DIR/local.conf post-config
+#
+## ------------------------------------------------------------------------------------------------------ LAUNCH SERVICES
+## Only run the services specified in `ENABLED_SERVICES`
+#
+## Launch Swift Services
+#if is_service_enabled swift; then
+#  echo_summary "Starting Swift"
+#  start_swift
+#fi
+#
+## NOTE(lyarwood): By default use a single hardcoded fixed_key across devstack deployments. This ensures the keys match
+## across nova and cinder across all hosts.
+#FIXED_KEY=${FIXED_KEY:-bae3516cc1c0eb18b05440eba8012a4a880a2ee04d584a9c1579445e675b12defdc716ec}
+#if is_service_enabled cinder; then
+#  iniset $CINDER_CONF key_manager fixed_key "$FIXED_KEY"
+#fi
+#
+#async_wait configure_neutron_nova
+#
+## NOTE(clarkb): This must come after async_wait configure_neutron_nova because configure_neutron_nova modifies
+## $NOVA_CONF and $NOVA_CPU_CONF as well. If we don't wait then these two ini updates race either other and can result in
+## unexpected configs.
+#if is_service_enabled nova; then
+#  iniset $NOVA_CONF key_manager fixed_key "$FIXED_KEY"
+#  iniset $NOVA_CPU_CONF key_manager fixed_key "$FIXED_KEY"
+#fi
+#
+## Launch the nova-api and wait for it to answer before continuing
+#if is_service_enabled n-api; then
+#  echo_summary "Starting Nova API"
+#  start_nova_api
+#fi
+#
+#if is_service_enabled ovn-controller ovn-controller-vtep; then
+#  echo_summary "Starting OVN services"
+#  start_ovn_services
+#fi
+#
+#if is_service_enabled neutron-api; then
+#  echo_summary "Starting Neutron"
+#  start_neutron_api
+#elif is_service_enabled q-svc; then
+#  echo_summary "Starting Neutron"
+#  configure_neutron_after_post_config
+#  start_neutron_service_and_check
+#fi
+#
+## Start placement before any of the service that are likely to want to use it to manage resource providers.
+#if is_service_enabled placement; then
+#  echo_summary "Starting Placement"
+#  start_placement
+#fi
+#
+#if is_service_enabled neutron; then
+#  start_neutron
+#fi
+#
+## Once neutron agents are started setup initial network elements
+#if is_service_enabled q-svc && [[ "$NEUTRON_CREATE_INITIAL_NETWORKS" == "True" ]]; then
+#  echo_summary "Creating initial neutron network elements"
+#  # Here's where plugins can wire up their own networks instead of the code in lib/neutron_plugins/services/l3
+#  if type -p neutron_plugin_create_initial_networks >/dev/null; then
+#    neutron_plugin_create_initial_networks
+#  else
+#    create_neutron_initial_network
+#  fi
+#
+#fi
+#
+#if is_service_enabled nova; then
+#  echo_summary "Starting Nova"
+#  start_nova
+#  async_runfunc create_flavors
+#fi
+#if is_service_enabled cinder; then
+#  echo_summary "Starting Cinder"
+#  start_cinder
+#  create_volume_types
+#fi
+#
+## This sleep is required for cinder volume service to become active and publish capabilities to cinder scheduler before
+## creating the image-volume
+#if [[ "$USE_CINDER_FOR_GLANCE" == "True" ]]; then
+#  sleep 30
+#fi
+#
+## Launch the Glance services
+## NOTE (abhishekk): We need to start glance api service only after cinder service has started as on glance startup
+## glance-api queries cinder for validating volume_type configured for cinder store of glance.
+#if is_service_enabled glance; then
+#  echo_summary "Starting Glance"
+#  start_glance
+#fi
+#
+## ------------------------------------------------------------------------------------------------------- INSTALL IMAGES
+## Upload an image to Glance.
+## The default image is CirrOS, a small testing image which lets you login as root CirrOS has a `cloud-init` analog
+## supporting login via keypair and sending scripts as userdata.
+## See https://help.ubuntu.com/community/CloudInit for more on ``cloud-init``
+#
+## NOTE(yoctozepto): limited to node hosting the database which is the controller
+#if is_service_enabled $DATABASE_BACKENDS && is_service_enabled glance; then
+#  echo_summary "Uploading images"
+#
+#  for image_url in ${IMAGE_URLS//,/ }; do
+#    upload_image $image_url
+#  done
+#fi
+#
+#async_wait create_flavors
+#
+#if is_service_enabled horizon; then
+#  echo_summary "Starting Horizon"
+#  init_horizon
+#  start_horizon
+#fi
+#
+## ---------------------------------------------------------------------------------------------- CREATE ACCOUNT RC FILES
+## Creates source able script files for easier user switching.
+## This step also creates certificates for tenants and users, which is helpful in image bundle steps.
+#if is_service_enabled nova && is_service_enabled keystone; then
+#  USERRC_PARAMS="-PA --target-dir $TOP_DIR/accrc --os-password $ADMIN_PASSWORD"
+#
+#  if [ -f $SSL_BUNDLE_FILE ]; then
+#    USERRC_PARAMS="$USERRC_PARAMS --os-cacert $SSL_BUNDLE_FILE"
+#  fi
+#
+#  $TOP_DIR/tools/create_userrc.sh $USERRC_PARAMS
+#fi
+#
+## Save some values we generated for later use
+#save_stackenv
+#
+## ------------------------------------------------------------------------------------------------- WRAPUP CONFIGURATION
+## local.conf extra
+## Apply configuration from ``local.conf`` if it exists for layer 2 services
+## Phase: extra
+#merge_config_group $TOP_DIR/local.conf extra
+#
+## ----------------------------------------------------------------------------------------------------------- RUN EXTRAS
+## Phase: extra
+#run_phase stack extra
+#
+## local.conf post-extra
+## Apply late configuration from ``local.conf`` if it exists for layer 2 services
+## Phase: post-extra
+#merge_config_group $TOP_DIR/local.conf post-extra
+#
+## -------------------------------------------------------------------------------------------------------- SANITY CHECKS
+## Check that computes are all ready
+## TODO(sdague): there should be some generic phase here.
+#if is_service_enabled n-cpu; then
+#  is_nova_ready
+#fi
+#
+## Check the status of running services
+#service_check
+#
+## ----------------------------------------------------------------------------------------------- CONFIGURE NOVA CELLLV2
+## Do this late because it requires compute hosts to have started
+#if is_service_enabled n-api; then
+#  if is_service_enabled n-cpu; then
+#    if [[ -x $(which nova-manage) ]]; then
+#      if [[ ${CONDA_ENABLED} = True ]]; then
+#        $NOVA_BIN_DIR/nova-manage cell_v2 discover_hosts --verbose
+#      else
+#        $TOP_DIR/tools/discover_hosts.sh
+#      fi
+#    fi
+#  else
+#    # Some CI systems like Hyper-V build the control plane on
+#    # Linux, and join in non Linux Computes after setup. This
+#    # allows them to delay the processing until after their whole
+#    # environment is up.
+#    echo_summary "SKIPPING Cell setup because n-cpu is not enabled. You will have to do this manually before you have a working environment."
+#  fi
+#  # Run the nova-status upgrade check command which can also be used
+#  # to verify the base install. Note that this is good enough in a
+#  # single node deployment, but in a multi-node setup it won't verify
+#  # any subnodes - that would have to be driven from whatever tooling
+#  # is deploying the subnodes, e.g. the zuul v3 devstack-multinode job.
+#  $NOVA_BIN_DIR/nova-status --config-file $NOVA_CONF upgrade check
+#fi
+#
+## ------------------------------------------------------------------------------------------------------ RUN LOCAL SCRIPT
+## Run ``local.sh`` if it exists to perform user-managed tasks
+#if [[ -x $TOP_DIR/local.sh ]]; then
+#  echo "Running user script $TOP_DIR/local.sh"
+#  $TOP_DIR/local.sh
+#fi
+#
+## ---------------------------------------------------------------------------------------------------- BASH COMPLETETION
+## Prepare bash completion for OSC
+## Note we use "command" to avoid the timing wrapper which isn't relevant here and floods logs
+#command openstack complete |
+#  sudo tee /etc/bash_completion.d/osc.bash_completion >/dev/null
+#
+## If cinder is configured, set global_filter for PV devices
+#if is_service_enabled cinder; then
+#  if is_ubuntu; then
+#    echo_summary "Configuring lvm.conf global device filter"
+#    set_lvm_filter
+#  else
+#    echo_summary "Skip setting lvm filters for non Ubuntu systems"
+#  fi
+#fi
+#
+## ------------------------------------------------------------------------------------------------------ RUN TEST-CONFIG
+## Phase: test-config
+#run_phase stack test-config
+#
+## Apply late configuration from ``local.conf`` if it exists for layer 2 services
+## Phase: test-config
+#merge_config_group $TOP_DIR/local.conf test-config
+#
+## ------------------------------------------------------------------------------------------------------------------ FIN
+#set +o xtrace
+#
+#if [[ -n "$LOGFILE" ]]; then
+#  exec 1>&3
+#  # Force all output to stdout and logs now
+#  exec 1> >(tee -a "${LOGFILE}") 2>&1
+#else
+#  # Force all output to stdout now
+#  exec 1>&3
+#fi
+#
+## Make sure we didn't leak any background tasks
+#async_cleanup
+#
+## Dump out the time totals
+#time_totals
+#async_print_timing
+#
+#if is_service_enabled mysql; then
+#  if [[ "$MYSQL_GATHER_PERFORMANCE" == "True" && "$MYSQL_HOST" ]]; then
+#    echo ""
+#    echo ""
+#    echo "Post-stack database query stats:"
+#    if [[ "$DOCKERIZED_DATABASE" == "True" ]]; then
+#      docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
+#        'SELECT * FROM queries' -t 2>/dev/null
+#      docker exec openstack-mysql mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
+#        'DELETE FROM queries' 2>/dev/null
+#    else
+#      mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
+#        'SELECT * FROM queries' -t 2>/dev/null
+#      mysql -u $DATABASE_USER -p$DATABASE_PASSWORD -h $MYSQL_HOST stats -e \
+#        'DELETE FROM queries' 2>/dev/null
+#    fi
+#  fi
+#fi
+#
+## ------------------------------------------------------------------------------------------------------ USING THE CLOUD
+#echo ""
+#echo ""
+#echo ""
+#echo "This is your host IP address: $HOST_IP"
+#if [ "$HOST_IPV6" != "" ]; then
+#  echo "This is your host IPv6 address: $HOST_IPV6"
+#fi
+#
+## If you installed Horizon on this server you should be able to access the site using your browser.
+#if is_service_enabled horizon; then
+#  echo "Horizon is now available at http://$SERVICE_HOST$HORIZON_APACHE_ROOT"
+#fi
+#
+## If Keystone is present you can point ``nova`` cli to this server
+#if is_service_enabled keystone; then
+#  echo "Keystone is serving at $KEYSTONE_SERVICE_URI/"
+#  echo "The default users are: admin and demo"
+#  echo "The password: $ADMIN_PASSWORD"
+#fi
+#
+## Warn that a deprecated feature was used
+#if [[ -n "$DEPRECATED_TEXT" ]]; then
+#  echo
+#  echo -e "WARNING: $DEPRECATED_TEXT"
+#  echo
+#fi
+#
+#echo
+#echo "Services are running under systemd unit files."
+#echo "For more information see: "
+#echo "https://docs.openstack.org/devstack/latest/systemd.html"
+#echo
+#
+## Useful info on current state
+#cat /etc/devstack-version
+#echo
+#
+## Indicate how long this took to run (bash maintained variable ``SECONDS``)
+#echo_summary "stack.sh completed in $SECONDS seconds."
+#
+## Restore/close logging file descriptors
+#exec 1>&3
+#exec 2>&3
+#exec 3>&-
+#exec 6>&-

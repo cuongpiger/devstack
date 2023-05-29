@@ -286,17 +286,21 @@ function configure_glance_store {
 }
 
 function configure_glance_quotas {
+  local cmd=openstack
+  if is_equal_to $CONDA_ENABLED True; then
+    cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+  fi
 
   # Registered limit resources in keystone are system-specific resources.
   # Make sure we use a system-scoped token to interact with this API.
 
-  openstack --os-cloud devstack-system-admin registered limit create --service glance \
+  $cmd --os-cloud devstack-system-admin registered limit create --service glance \
     --default-limit $GLANCE_LIMIT_IMAGE_SIZE_TOTAL --region $REGION_NAME image_size_total
-  openstack --os-cloud devstack-system-admin registered limit create --service glance \
+  $cmd --os-cloud devstack-system-admin registered limit create --service glance \
     --default-limit $GLANCE_LIMIT_IMAGE_SIZE_TOTAL --region $REGION_NAME image_stage_total
-  openstack --os-cloud devstack-system-admin registered limit create --service glance \
+  $cmd --os-cloud devstack-system-admin registered limit create --service glance \
     --default-limit 100 --region $REGION_NAME image_count_total
-  openstack --os-cloud devstack-system-admin registered limit create --service glance \
+  $cmd --os-cloud devstack-system-admin registered limit create --service glance \
     --default-limit 100 --region $REGION_NAME image_count_uploading
 
   # Tell glance to use these limits
@@ -310,10 +314,10 @@ function configure_glance_quotas {
   iniset $GLANCE_API_CONF oslo_limit auth_url $KEYSTONE_SERVICE_URI
   iniset $GLANCE_API_CONF oslo_limit system_scope all
   iniset $GLANCE_API_CONF oslo_limit endpoint_id \
-    $(openstack --os-cloud devstack-system-admin endpoint list --service glance -f value -c ID)
+    $($cmd --os-cloud devstack-system-admin endpoint list --service glance -f value -c ID)
 
   # Allow the glance service user to read quotas
-  openstack --os-cloud devstack-system-admin role add --user glance \
+  $cmd --os-cloud devstack-system-admin role add --user glance \
     --user-domain $SERVICE_DOMAIN_NAME --system all reader
 }
 
