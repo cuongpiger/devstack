@@ -55,6 +55,6 @@ Troubleshooting
 
     conda install -c conda-forge uwsgi
 
+**The q-agt/neutron-agt service must be disabled with OVN.**
 
-
-
+* If you get this error, please remove all `settings` files in directory `<openstack_component>/devstack/`. For example: `magnum/devstack/settings`, `heat/devstack/settings`,...
