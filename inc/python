@@ -62,7 +62,7 @@ function get_python_exec_prefix {
 
   local PYTHON_PATH=/usr/local/bin
   if is_equal_to $CONDA_ENABLED True; then
-    PYTHON_PATH=home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin
+    PYTHON_PATH=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin
   else
     is_suse && PYTHON_PATH=/usr/bin
   fi
@@ -488,6 +488,9 @@ function conda_setup_env {
 
   if ! check_conda_env_exists $CONDA_ENV_NAME; then
     conda create -y -n $CONDA_ENV_NAME python=$CONDA_PYTHON_VERSION pip
+    conda install -n $CONDA_ENV_NAME uwsgi -y
+    /home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/python -m pip install libvirt-python==6.1.0
+
     if [ $? -eq 0 ]; then
       :
     else

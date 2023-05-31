@@ -551,7 +551,11 @@ function start_neutron_service_and_check {
         enable_service neutron-rpc-server
         run_process neutron-rpc-server "$NEUTRON_BIN_DIR/neutron-rpc-server $cfg_file_options"
     else
-        run_process q-svc "$NEUTRON_BIN_DIR/neutron-server $cfg_file_options"
+        local cmd=$NEUTRON_BIN_DIR/neutron-server
+        if is_equal_to $CONDA_ENABLED True; then
+          cmd=/$cmd
+        fi
+        run_process q-svc "$cmd $cfg_file_options"
         neutron_url=$service_protocol://$Q_HOST:$service_port/
         # Start proxy if enabled
         if is_service_enabled tls-proxy; then
@@ -781,7 +785,7 @@ function _configure_neutron_common {
     _create_neutron_conf_dir
 
     # Uses oslo config generator to generate core sample configuration files
-    (cd $NEUTRON_DIR && exec ./tools/generate_config_file_samples.sh)
+    (cd $NEUTRON_DIR && exec ./tools/generate_config_file_samples.sh "$CONDA_ENABLED" "$CONDA_ENV_NAME")
 
     cp $NEUTRON_DIR/etc/neutron.conf.sample $NEUTRON_CONF
 
@@ -1021,6 +1025,11 @@ function _neutron_setup_rootwrap {
     # Specify ``rootwrap.conf`` as first parameter to neutron-rootwrap
     ROOTWRAP_SUDOER_CMD="$NEUTRON_ROOTWRAP $Q_RR_CONF_FILE *"
     ROOTWRAP_DAEMON_SUDOER_CMD="$NEUTRON_ROOTWRAP-daemon $Q_RR_CONF_FILE"
+
+    if [[ "$CONDA_ENABLED" == "True" ]]; then
+      ROOTWRAP_SUDOER_CMD=/$ROOTWRAP_SUDOER_CMD
+      ROOTWRAP_DAEMON_SUDOER_CMD=/$ROOTWRAP_DAEMON_SUDOER_CMD
+    fi
 
     # Set up the rootwrap sudoers for neutron
     TEMPFILE=`mktemp`

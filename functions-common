@@ -1654,6 +1654,10 @@ function _run_under_systemd {
   local service=$1
   local command="$2"
   local cmd=$command
+
+  if is_equal_to $CONDA_ENABLED True; then
+    cmd=/$cmd
+  fi
   # sanity check the command
   _common_systemd_pitfalls "$cmd"
 

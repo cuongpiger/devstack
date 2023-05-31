@@ -613,7 +613,12 @@ function start_glance {
   fi
 
   if [[ "$GLANCE_STANDALONE" == False ]]; then
-    run_process g-api "$(which uwsgi) --procname-prefix glance-api --ini $GLANCE_UWSGI_CONF"
+    local uwsgi_cmd=$(which uwsgi)
+    if is_equal_to $CONDA_ENABLED True; then
+      uwsgi_cmd=$HOME/anaconda3/envs/$CONDA_ENV_NAME/bin/uwsgi
+    fi
+
+    run_process g-api "$uwsgi_cmd --procname-prefix glance-api --ini $GLANCE_UWSGI_CONF"
   else
     run_process g-api "$GLANCE_BIN_DIR/glance-api --config-dir=$GLANCE_CONF_DIR"
   fi

@@ -111,6 +111,11 @@ function _upload_image {
   shift
   local properties
   local useimport
+  local cmd=openstack
+
+  if is_equal_to $CONDA_ENABLED True; then
+    cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+  fi
 
   properties=$(_image_properties_to_arg $*)
 
@@ -118,7 +123,7 @@ function _upload_image {
     useimport="--import"
   fi
 
-  openstack --os-cloud=devstack-admin --os-region-name="$REGION_NAME" image create "$image_name" --public --container-format "$container" --disk-format "$disk" $useimport $properties <"${image}"
+  $cmd --os-cloud=devstack-admin --os-region-name="$REGION_NAME" image create "$image_name" --public --container-format "$container" --disk-format "$disk" $useimport $properties <"${image}"
 }
 
 # Retrieve an image from a URL and upload into Glance.
@@ -497,15 +502,21 @@ function wait_for_compute {
   if [[ -z $compute_hostname ]]; then
     compute_hostname=$(hostname)
   fi
+
+  local oscmd=openstack
+  if is_equal_to $CONDA_ENABLED True; then
+    oscmd=$HOME/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+  fi
+
   timeout $timeout bash -x <<EOF || rval=$?
         ID=""
         while [[ "\$ID" == "" ]]; do
             sleep 1
             if [[ "$VIRT_DRIVER" = 'fake' ]]; then
                 # When using the fake driver the compute hostnames have a suffix of 1 to NUMBER_FAKE_NOVA_COMPUTE
-                ID=\$(openstack --os-cloud devstack-admin --os-region "$REGION_NAME" compute service list --host $(hostname)1 --service nova-compute -c ID -f value)
+                ID=\$($oscmd --os-cloud devstack-admin --os-region "$REGION_NAME" compute service list --host $(hostname)1 --service nova-compute -c ID -f value)
             else
-                ID=\$(openstack --os-cloud devstack-admin --os-region "$REGION_NAME" compute service list --host "$compute_hostname" --service nova-compute -c ID -f value)
+                ID=\$($oscmd --os-cloud devstack-admin --os-region "$REGION_NAME" compute service list --host "$compute_hostname" --service nova-compute -c ID -f value)
             fi
         done
 EOF
