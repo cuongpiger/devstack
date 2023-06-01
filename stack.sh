@@ -683,10 +683,15 @@ sudo systemctl restart systemd-journald
 install_infra
 
 # Install bindep
-$VIRTUALENV_CMD $DEST/bindep-venv
-# TODO(ianw) : optionally install from zuul checkout?
-$DEST/bindep-venv/bin/pip install bindep
-export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep
+if [[ $CONDA_ENABLED = True ]]; then
+  pip_install bindep
+  export BINDEP_CMD=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/bindep
+else
+  $VIRTUALENV_CMD $DEST/bindep-venv
+  # TODO(ianw) : optionally install from zuul checkout?
+  $DEST/bindep-venv/bin/pip install bindep
+  export BINDEP_CMD=${DEST}/bindep-venv/bin/bindep
+fi
 
 # Install packages as defined in plugin bindep.txt files
 pkgs="$(_get_plugin_bindep_packages)"
@@ -971,7 +976,6 @@ fi
 # -------------------------------------------------------------------------------------------------------------- NEUTRON
 if is_service_enabled neutron; then
   echo_summary "Configuring Neutron"
-
   configure_neutron
 
   # Run init_neutron only on the node hosting the Neutron API server
@@ -1110,7 +1114,6 @@ if is_service_enabled q-svc && [[ "$NEUTRON_CREATE_INITIAL_NETWORKS" == "True" ]
   else
     create_neutron_initial_network
   fi
-
 fi
 
 if is_service_enabled nova; then
@@ -1206,7 +1209,13 @@ service_check
 # Do this late because it requires compute hosts to have started
 if is_service_enabled n-api; then
   if is_service_enabled n-cpu; then
-    $TOP_DIR/tools/discover_hosts.sh
+    if [[ -x $(which nova-manage) ]]; then
+      if [[ ${CONDA_ENABLED} = True ]]; then
+        $NOVA_BIN_DIR/nova-manage cell_v2 discover_hosts --verbose
+      else
+        $TOP_DIR/tools/discover_hosts.sh
+      fi
+    fi
   else
     # Some CI systems like Hyper-V build the control plane on
     # Linux, and join in non Linux Computes after setup. This
@@ -1232,8 +1241,13 @@ fi
 # ---------------------------------------------------------------------------------------------------- BASH COMPLETETION
 # Prepare bash completion for OSC
 # Note we use "command" to avoid the timing wrapper which isn't relevant here and floods logs
-command openstack complete |
-  sudo tee /etc/bash_completion.d/osc.bash_completion >/dev/null
+if [[ "$CONDA_ENABLED" == "True" ]]; then
+  command /home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack complete |
+    sudo tee /etc/bash_completion.d/osc.bash_completion >/dev/null
+else
+  command openstack complete |
+    sudo tee /etc/bash_completion.d/osc.bash_completion >/dev/null
+fi
 
 # If cinder is configured, set global_filter for PV devices
 if is_service_enabled cinder; then

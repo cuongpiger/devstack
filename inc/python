@@ -61,7 +61,11 @@ function get_python_exec_prefix {
   $xtrace
 
   local PYTHON_PATH=/usr/local/bin
-  is_suse && PYTHON_PATH=/usr/bin
+  if is_equal_to $CONDA_ENABLED True; then
+    PYTHON_PATH=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin
+  else
+    is_suse && PYTHON_PATH=/usr/bin
+  fi
   echo $PYTHON_PATH
 }
 
@@ -169,7 +173,8 @@ function pip_install {
     local sudo_pip="env"
   elif is_equal_to $CONDA_ENABLED True; then
     local cmd_pip="$PYTHON -m pip"
-    sudo_pip="sudo -H LC_ALL=en_US.UTF-8 SETUPTOOLS_USE_DISTUTILS=stdlib "
+    # sudo_pip="sudo -H LC_ALL=en_US.UTF-8 SETUPTOOLS_USE_DISTUTILS=stdlib "
+    sudo_pip=""
   else
     local cmd_pip="python$PYTHON3_VERSION -m pip"
     # See
@@ -188,14 +193,21 @@ function pip_install {
 
   $xtrace
 
-  $sudo_pip \
-    http_proxy="${http_proxy:-}" \
-    https_proxy="${https_proxy:-}" \
-    no_proxy="${no_proxy:-}" \
-    PIP_FIND_LINKS=$PIP_FIND_LINKS \
-    $cmd_pip $upgrade \
-    $@
-  result=$?
+  if is_equal_to $CONDA_ENABLED True; then
+    $sudo_pip \
+      $cmd_pip $upgrade \
+      $@
+    result=$?
+  else
+    $sudo_pip \
+      http_proxy="${http_proxy:-}" \
+      https_proxy="${https_proxy:-}" \
+      no_proxy="${no_proxy:-}" \
+      PIP_FIND_LINKS=$PIP_FIND_LINKS \
+      $cmd_pip $upgrade \
+      $@
+    result=$?
+  fi
 
   time_stop "pip_install"
   return $result
@@ -381,8 +393,13 @@ function _setup_package_with_constraints_edit {
     # source we are about to do.
     local name
     name=$(awk '/^name.*=/ {print $3}' $project_dir/setup.cfg)
-    $REQUIREMENTS_DIR/.venv/bin/edit-constraints \
-      $REQUIREMENTS_DIR/upper-constraints.txt -- $name
+    if is_equal_to $CONDA_ENABLED True; then
+      local edcmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/edit-constraints
+      $edcmd $REQUIREMENTS_DIR/upper-constraints.txt -- $name
+    else
+      $REQUIREMENTS_DIR/.venv/bin/edit-constraints \
+        $REQUIREMENTS_DIR/upper-constraints.txt -- $name
+    fi
   fi
 
   setup_package $bindep $project_dir "$flags" $extras
@@ -471,6 +488,9 @@ function conda_setup_env {
 
   if ! check_conda_env_exists $CONDA_ENV_NAME; then
     conda create -y -n $CONDA_ENV_NAME python=$CONDA_PYTHON_VERSION pip
+    conda install -n $CONDA_ENV_NAME uwsgi -y
+    /home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/python -m pip install libvirt-python==6.1.0
+
     if [ $? -eq 0 ]; then
       :
     else

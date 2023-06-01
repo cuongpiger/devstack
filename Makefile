@@ -98,3 +98,8 @@ ds-remote:
 
 # Refresh the current DevStack checkout nd re-initialize
 refresh: unstack ds-pull stack
+
+################################################################################################### CUSTOMIZING DEVSTACK
+generate-pdf-doc:
+	@./cmd/doc.sh
+

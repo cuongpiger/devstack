@@ -550,7 +550,11 @@ function start_cinder {
         start_tls_proxy cinder '*' $CINDER_SERVICE_PORT $CINDER_SERVICE_HOST $CINDER_SERVICE_PORT_INT
       fi
     else
-      run_process "c-api" "$(which uwsgi) --procname-prefix cinder-api --ini $CINDER_UWSGI_CONF"
+      local uwsgi_cmd=$(which uwsgi)
+      if is_equal_to $CONDA_ENABLED True; then
+        uwsgi_cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/uwsgi
+      fi
+      run_process "c-api" "$uwsgi_cmd --procname-prefix cinder-api --ini $CINDER_UWSGI_CONF"
       cinder_url=$service_protocol://$SERVICE_HOST/volume/v3
     fi
   fi
@@ -586,9 +590,13 @@ function create_one_type {
   type_name=$1
   property_key=$2
   property_value=$3
+  local cmd=openstack
+  if is_equal_to $CONDA_ENABLED True; then
+    cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+  fi
   # NOTE (e0ne): openstack client doesn't work with cinder in noauth mode
   if is_service_enabled keystone; then
-    openstack --os-region-name="$REGION_NAME" volume type create --property $property_key="$property_value" $type_name
+    $cmd --os-region-name="$REGION_NAME" volume type create --property $property_key="$property_value" $type_name
   else
     # TODO (e0ne): use openstack client once it will support cinder in noauth mode:
     # https://bugs.launchpad.net/python-cinderclient/+bug/1755279

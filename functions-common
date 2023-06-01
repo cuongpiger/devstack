@@ -969,12 +969,16 @@ function get_or_add_user_project_role {
     $domain_args |
     grep '^|\s[a-f0-9]\+' | get_field 1)
   if [[ -z "$user_role_id" ]]; then
+    local cmd=openstack
+    if is_equal_to $CONDA_ENABLED True; then
+      cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+    fi
     # Adds role to user and get it
-    openstack --os-cloud devstack-system-admin role add $1 \
+    $cmd --os-cloud devstack-system-admin role add $1 \
       --user $2 \
       --project $3 \
       $domain_args
-    user_role_id=$(openstack --os-cloud devstack-system-admin role assignment list \
+    user_role_id=$($cmd --os-cloud devstack-system-admin role assignment list \
       --role $1 \
       --user $2 \
       --project $3 \
@@ -988,18 +992,22 @@ function get_or_add_user_project_role {
 # Usage: get_or_add_user_domain_role <role> <user> <domain>
 function get_or_add_user_domain_role {
   local user_role_id
+  local cmd=openstack
+  if is_equal_to $CONDA_ENABLED True; then
+    cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+  fi
   # Gets user role id
-  user_role_id=$(openstack --os-cloud devstack-system-admin role assignment list \
+  user_role_id=$($cmd --os-cloud devstack-system-admin role assignment list \
     --role $1 \
     --user $2 \
     --domain $3 |
     grep '^|\s[a-f0-9]\+' | get_field 1)
   if [[ -z "$user_role_id" ]]; then
     # Adds role to user and get it
-    openstack --os-cloud devstack-system-admin role add $1 \
+    $cmd --os-cloud devstack-system-admin role add $1 \
       --user $2 \
       --domain $3
-    user_role_id=$(openstack --os-cloud devstack-system-admin role assignment list \
+    user_role_id=$($cmd --os-cloud devstack-system-admin role assignment list \
       --role $1 \
       --user $2 \
       --domain $3 |
@@ -1013,11 +1021,15 @@ function get_or_add_user_domain_role {
 function get_or_add_user_system_role {
   local user_role_id
   local domain_args
+  local cmd=openstack
+  if is_equal_to $CONDA_ENABLED True; then
+    cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+  fi
 
   domain_args=$(_get_domain_args $4)
 
   # Gets user role id
-  user_role_id=$(openstack --os-cloud devstack-system-admin role assignment list \
+  user_role_id=$($cmd --os-cloud devstack-system-admin role assignment list \
     --role $1 \
     --user $2 \
     --system $3 \
@@ -1025,11 +1037,11 @@ function get_or_add_user_system_role {
     -f value -c Role)
   if [[ -z "$user_role_id" ]]; then
     # Adds role to user and get it
-    openstack --os-cloud devstack-system-admin role add $1 \
+    $cmd --os-cloud devstack-system-admin role add $1 \
       --user $2 \
       --system $3 \
       $domain_args
-    user_role_id=$(openstack --os-cloud devstack-system-admin role assignment list \
+    user_role_id=$($cmd --os-cloud devstack-system-admin role assignment list \
       --role $1 \
       --user $2 \
       --system $3 \
@@ -1043,18 +1055,22 @@ function get_or_add_user_system_role {
 # Usage: get_or_add_group_project_role <role> <group> <project>
 function get_or_add_group_project_role {
   local group_role_id
+  local cmd=openstack
+  if is_equal_to $CONDA_ENABLED True; then
+    cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+  fi
   # Gets group role id
-  group_role_id=$(openstack --os-cloud devstack-system-admin role assignment list \
+  group_role_id=$($cmd --os-cloud devstack-system-admin role assignment list \
     --role $1 \
     --group $2 \
     --project $3 \
     -f value)
   if [[ -z "$group_role_id" ]]; then
     # Adds role to group and get it
-    openstack --os-cloud devstack-system-admin role add $1 \
+    $cmd --os-cloud devstack-system-admin role add $1 \
       --group $2 \
       --project $3
-    group_role_id=$(openstack --os-cloud devstack-system-admin role assignment list \
+    group_role_id=$($cmd --os-cloud devstack-system-admin role assignment list \
       --role $1 \
       --group $2 \
       --project $3 \
@@ -1638,6 +1654,10 @@ function _run_under_systemd {
   local service=$1
   local command="$2"
   local cmd=$command
+
+  if is_equal_to $CONDA_ENABLED True; then
+    cmd=/$cmd
+  fi
   # sanity check the command
   _common_systemd_pitfalls "$cmd"
 
@@ -2441,8 +2461,12 @@ function oscwrap {
   # Cannot use timer_start and timer_stop as we run in subshells
   # and those rely on modifying vars in the same process (which cannot
   # happen from a subshell.
+  local os_cmd=openstack
+  if is_equal_to $CONDA_ENABLED True; then
+    os_cmd=/home/$USER/anaconda3/envs/$CONDA_ENV_NAME/bin/openstack
+  fi
   start=$(date +%s%3N)
-  out=$(command openstack "$@")
+  out=$(command "$os_cmd" "$@")
   rc=$?
   end=$(date +%s%3N)
   echo $((end - start)) >>$OSCWRAP_TIMER_FILE

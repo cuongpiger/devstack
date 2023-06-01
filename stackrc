@@ -424,6 +424,7 @@ GITBRANCH["oslo.log"]=${OSLOLOG_BRANCH:-$TARGET_BRANCH}
 # oslo.messaging
 GITREPO["oslo.messaging"]=${OSLOMSG_REPO:-${GIT_BASE}/openstack/oslo.messaging.git}
 GITBRANCH["oslo.messaging"]=${OSLOMSG_BRANCH:-$TARGET_BRANCH}
+GITDIR["oslo.messaging"]=$DEST/oslo.messaging
 
 # oslo.middleware
 GITREPO["oslo.middleware"]=${OSLOMID_REPO:-${GIT_BASE}/openstack/oslo.middleware.git}
@@ -962,3 +963,7 @@ DOCKERIZED_RPC=${DOCKERIZED_RPC:-False}
 DOCKERIZED_ETCD3=${DOCKERIZED_ETCD3:-False}
 PYTHON_JAEGERCLIENT=${PYTHON_JAEGERCLIENT:-"jaeger-client"}
 LIB_WITH_EDITABLE_MODE=${LIB_WITH_EDITABLE_MODE:-""}
+
+CONDA_ENABLED=${CONDA_ENABLED:-False}
+CONDA_ENV_NAME=${CONDA_ENV_NAME:-"devstack"}
+CONDA_PYTHON_VERSION=${CONDA_PYTHON_VERSION:-"3.8"}

@@ -149,3 +149,6 @@ rm -rf ~/.config/openstack
 sudo sed -i '/.*comment=devstack-.*/ d' /etc/fstab
 docker container rm -f openstack-mysql openstack-etcd3 openstack-jaeger openstack-rabbitmq
 docker volume prune -f
+
+conda remove -y --name devstack --all
+sudo rm -rf /home/$USER/anaconda3/envs/devstack
