@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+apt-get install iproute2 -y
+
 # `stack.sh` is an opinionated OpenStack developer installation. It installs and configures various combinations of
 # Cinder, Glance, Horizon, Keystone, Nova, Neutron, and Swift.
 #
