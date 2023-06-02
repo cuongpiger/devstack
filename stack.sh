@@ -665,8 +665,8 @@ fixup_all
 pip_install -U os-testr
 
 # the default rate limit of 1000 messages / 30 seconds is not sufficient given how verbose our logging is.
-iniset -sudo /etc/systemd/journald.conf "Journal" "RateLimitBurst" "0"
-sudo systemctl restart systemd-journald
+iniset /etc/systemd/journald.conf "Journal" "RateLimitBurst" "0"
+systemctl restart systemd-journald
 
 # -------------------------------------------------------------------------------------------------- VIRTUAL ENVIRONMENT
 # Install required infra support libraries
