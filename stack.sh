@@ -107,18 +107,6 @@ if [[ "${POSIXLY_CORRECT}" == "y" ]]; then
   exit 1
 fi
 
-# OpenStack is designed to be run as a non-root user. Horizon will fail to run as root since Apache will not serve
-# content from root-user. `stack.sh` must not be run as root. It aborts and suggests one course of action to create a
-# suitable user account.
-if [[ $EUID -eq 0 ]]; then
-  set +o xtrace
-  echo "DevStack should be run as a user with sudo permissions, "
-  echo "not root."
-  echo "A \"stack\" user configured correctly can be created with:"
-  echo " $TOP_DIR/tools/create-stack-user.sh"
-  exit 1
-fi
-
 # OpenStack is designed to run at a system level, with system level installation of python packages. It does not support
 # running under a virtual env, and will fail in really odd ways if you do this. Make this explicit as it has come up on
 # the mailing list.

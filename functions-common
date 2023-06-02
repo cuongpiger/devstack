@@ -398,7 +398,7 @@ function _ensure_lsb_release {
 
   # the `lsb_release` command is not available, so try to install it
   if [[ -x $(command -v apt-get 2>/dev/null) ]]; then
-    sudo apt-get install -y lsb-release
+    apt-get install -y lsb-release
   elif [[ -x $(command -v zypper 2>/dev/null) ]]; then
     sudo zypper -n install lsb-release
   elif [[ -x $(command -v dnf 2>/dev/null) ]]; then

@@ -65,21 +65,21 @@ if ! isset ENABLED_SERVICES; then
   # Keystone - nothing works without keystone
   ENABLED_SERVICES=key
   # Nova - services to support libvirt based openstack clouds
-  ENABLED_SERVICES+=,n-api,n-cpu,n-cond,n-sch,n-novnc,n-api-meta
-  # Placement service needed for Nova
-  ENABLED_SERVICES+=,placement-api,placement-client
-  # Glance services needed for Nova
-  ENABLED_SERVICES+=,g-api
-  # Cinder
-  ENABLED_SERVICES+=,c-sch,c-api,c-vol
-  # OVN
-  ENABLED_SERVICES+=,ovn-controller,ovn-northd,ovs-vswitchd,ovsdb-server
-  # Neutron
-  ENABLED_SERVICES+=,q-svc,q-ovn-metadata-agent
-  # Dashboard
-  ENABLED_SERVICES+=,horizon
-  # Additional services
-  ENABLED_SERVICES+=,rabbit,tempest,mysql,etcd3,dstat
+#   ENABLED_SERVICES+=,n-api,n-cpu,n-cond,n-sch,n-novnc,n-api-meta
+#   # Placement service needed for Nova
+#   ENABLED_SERVICES+=,placement-api,placement-client
+#   # Glance services needed for Nova
+#   ENABLED_SERVICES+=,g-api
+#   # Cinder
+#   ENABLED_SERVICES+=,c-sch,c-api,c-vol
+#   # OVN
+#   ENABLED_SERVICES+=,ovn-controller,ovn-northd,ovs-vswitchd,ovsdb-server
+#   # Neutron
+#   ENABLED_SERVICES+=,q-svc,q-ovn-metadata-agent
+#   # Dashboard
+#   ENABLED_SERVICES+=,horizon
+#   # Additional services
+#   ENABLED_SERVICES+=,rabbit,tempest,mysql,etcd3,dstat
 fi
 
 # Global toggle for enabling services under mod_wsgi. If this is set to
