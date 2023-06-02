@@ -192,9 +192,7 @@ function enable_apache_site {
     local site=$@
     # Many of our sites use mod version. Just enable it.
     enable_apache_mod version
-    if is_ubuntu; then
-        sudo a2ensite ${site}
-    elif is_fedora || is_suse; then
+    if  is_fedora || is_suse; then
         local enabled_site_file="$APACHE_CONF_DIR/${site}.conf"
         # Do nothing if site already enabled or no site config exists
         if [[ -f ${enabled_site_file}.disabled ]] && [[ ! -f ${enabled_site_file} ]]; then
