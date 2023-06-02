@@ -124,17 +124,6 @@ function install_apache_uwsgi {
         # delete the temp directory
         sudo rm -rf $dir
     fi
-
-    if is_ubuntu || is_suse ; then
-        # we've got to enable proxy and proxy_uwsgi for this to work
-        sudo a2enmod proxy
-        sudo a2enmod proxy_uwsgi
-    elif is_fedora; then
-        # redhat is missing a nice way to turn on/off modules
-        echo "LoadModule proxy_uwsgi_module modules/mod_proxy_uwsgi.so" \
-            | sudo tee /etc/httpd/conf.modules.d/02-proxy-uwsgi.conf
-    fi
-    restart_apache_server
 }
 
 # install_apache_wsgi() - Install Apache server and wsgi module
