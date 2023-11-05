@@ -47,6 +47,9 @@ USE_CINDER_FOR_GLANCE=$(trueorfalse False USE_CINDER_FOR_GLANCE)
 # from CINDER_ENABLED_BACKENDS
 GLANCE_CINDER_DEFAULT_BACKEND=${GLANCE_CINDER_DEFAULT_BACKEND:-lvmdriver-1}
 GLANCE_STORE_ROOTWRAP_BASE_DIR=/usr/local/etc/glance
+if [[ "$GLOBAL_VENV" == "True" ]] ; then
+    GLANCE_STORE_ROOTWRAP_BASE_DIR=${DEVSTACK_VENV}/etc/glance
+fi
 # When Cinder is used as a glance store, you can optionally configure cinder to
 # optimize bootable volume creation by allowing volumes to be cloned directly
 # in the backend instead of transferring data via Glance.  To use this feature,
@@ -95,10 +98,10 @@ GLANCE_USE_IMPORT_WORKFLOW=$(trueorfalse False GLANCE_USE_IMPORT_WORKFLOW)
 GLANCE_ENABLE_QUOTAS=$(trueorfalse True GLANCE_ENABLE_QUOTAS)
 
 # Flag to set the oslo_policy.enforce_scope. This is used to switch
-# the Image API policies to start checking the scope of token. By Default,
-# this flag is False.
+# This is used to disable the Image API policies scope and new defaults.
+# By Default, it is True.
 # For more detail: https://docs.openstack.org/oslo.policy/latest/configuration/index.html#oslo_policy.enforce_scope
-GLANCE_ENFORCE_SCOPE=$(trueorfalse False GLANCE_ENFORCE_SCOPE)
+GLANCE_ENFORCE_SCOPE=$(trueorfalse True GLANCE_ENFORCE_SCOPE)
 
 GLANCE_CONF_DIR=${GLANCE_CONF_DIR:-/etc/glance}
 GLANCE_METADEF_DIR=$GLANCE_CONF_DIR/metadefs
@@ -540,7 +543,7 @@ function glance_remote_conf {
 # start_glance_remote_clone() - Clone the regular glance api worker
 function start_glance_remote_clone {
     local glance_remote_conf_dir glance_remote_port remote_data
-    local glance_remote_uwsgi
+    local glance_remote_uwsgi venv
 
     glance_remote_conf_dir="$(glance_remote_conf "")"
     glance_remote_port=$(get_random_port)
@@ -578,12 +581,16 @@ function start_glance_remote_clone {
     # We need to create the systemd service for the clone, but then
     # change it to include an Environment line to point the WSGI app
     # at the alternate config directory.
+    if [[ "$GLOBAL_VENV" == True ]]; then
+        venv="--venv $DEVSTACK_VENV"
+    fi
     write_uwsgi_user_unit_file devstack@g-api-r.service "$(which uwsgi) \
                                --procname-prefix \
                                glance-api-remote \
-                               --ini $glance_remote_uwsgi" \
+                               --ini $glance_remote_uwsgi \
+                               $venv" \
                                "" "$STACK_USER"
-    iniset -sudo ${SYSTEMD_DIR}/devstack@g-api-r.service \
+    iniadd -sudo ${SYSTEMD_DIR}/devstack@g-api-r.service \
            "Service" "Environment" \
            "OS_GLANCE_CONFIG_DIR=$glance_remote_conf_dir"
 

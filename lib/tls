@@ -364,8 +364,11 @@ function deploy_int_CA {
 function fix_system_ca_bundle_path {
     if is_service_enabled tls-proxy; then
         local capath
-        capath=$(python3 -c $'try:\n from requests import certs\n print (certs.where())\nexcept ImportError: pass')
-
+        if [[ "$GLOBAL_VENV" == "True" ]] ; then
+            capath=$($DEVSTACK_VENV/bin/python3 -c $'try:\n from requests import certs\n print (certs.where())\nexcept ImportError: pass')
+        else
+            capath=$(python3 -c $'try:\n from requests import certs\n print (certs.where())\nexcept ImportError: pass')
+        fi
         if [[ ! $capath == "" && ! $capath =~ ^/etc/.* && ! -L $capath ]]; then
             if is_fedora; then
                 sudo rm -f $capath
@@ -527,6 +530,7 @@ $listen_string
 <VirtualHost $f_host:$f_port>
     SSLEngine On
     SSLCertificateFile $DEVSTACK_CERT
+    SSLProtocol -all +TLSv1.3 +TLSv1.2
 
     # Disable KeepAlive to fix bug #1630664 a.k.a the
     # ('Connection aborted.', BadStatusLine("''",)) error
@@ -540,9 +544,11 @@ $listen_string
 
     # Avoid races (at the cost of performance) to re-use a pooled connection
     # where the connection is closed (bug 1807518).
+    # Set acquire=1 to disable waiting for connection pool members so that
+    # we can determine when apache is overloaded (returns 503).
     SetEnv proxy-initial-not-pooled
     <Location />
-        ProxyPass http://$b_host:$b_port/ retry=0 nocanon
+        ProxyPass http://$b_host:$b_port/ retry=0 nocanon acquire=1
         ProxyPassReverse http://$b_host:$b_port/
     </Location>
     ErrorLog $APACHE_LOG_DIR/tls-proxy_error.log

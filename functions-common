@@ -412,9 +412,9 @@ function _ensure_lsb_release {
 #  - os_VENDOR
 #  - os_PACKAGE
 function GetOSVersion {
-    # CentOS Stream 9 does not provide lsb_release
+    # CentOS Stream 9 and RHEL 9 do not provide lsb_release
     source /etc/os-release
-    if [[ "${ID}${VERSION}" == "centos9" ]]; then
+    if [[ "${ID}${VERSION}" == "centos9" ]] || [[ "${ID}${VERSION}" =~ "rhel9" ]]; then
         os_RELEASE=${VERSION_ID}
         os_CODENAME="n/a"
         os_VENDOR=$(echo $NAME | tr -d '[:space:]')
@@ -520,6 +520,7 @@ function is_fedora {
         [ "$os_VENDOR" = "openEuler" ] || \
         [ "$os_VENDOR" = "RedHatEnterpriseServer" ] || \
         [ "$os_VENDOR" = "RedHatEnterprise" ] || \
+        [ "$os_VENDOR" = "RedHatEnterpriseLinux" ] || \
         [ "$os_VENDOR" = "Rocky" ] || \
         [ "$os_VENDOR" = "CentOS" ] || [ "$os_VENDOR" = "CentOSStream" ] || \
         [ "$os_VENDOR" = "AlmaLinux" ] || \
@@ -609,9 +610,10 @@ function git_clone {
                 echo "the project to the \$PROJECTS variable in the job definition."
                 die $LINENO "ERROR_ON_CLONE is set to True so cloning not allowed in this configuration"
             fi
-            git_timed clone $git_clone_flags $git_remote $git_dest
+            git_timed clone --no-checkout $git_clone_flags $git_remote $git_dest
             cd $git_dest
-            git checkout $git_ref
+            git_timed fetch $git_clone_flags origin $git_ref
+            git_timed checkout FETCH_HEAD
         elif [[ "$RECLONE" = "True" ]]; then
             # if it does exist then simulate what clone does if asked to RECLONE
             cd $git_dest
@@ -1045,6 +1047,8 @@ function get_or_create_service {
             --description="$3" \
             -f value -c id
     )
+    # Drop cached token to invalidate catalog info in the token
+    remove_token_cache
     echo $service_id
 }
 
@@ -1062,7 +1066,6 @@ function _get_or_create_endpoint_with_interface {
         endpoint_id=$(openstack --os-cloud devstack-system-admin endpoint create \
             $1 $2 $3 --region $4 -f value -c id)
     fi
-
     echo $endpoint_id
 }
 
@@ -1086,6 +1089,8 @@ function get_or_create_endpoint {
     if [[ -n "$5" ]]; then
         _get_or_create_endpoint_with_interface $1 internal $5 $2
     fi
+    # Drop cached token to invalidate catalog info in the token
+    remove_token_cache
     # return the public id to indicate success, and this is the endpoint most likely wanted
     echo $public_id
 }
@@ -1109,6 +1114,12 @@ function is_ironic_hardware {
 
 function is_ironic_enforce_scope {
     is_service_enabled ironic && [[ "$IRONIC_ENFORCE_SCOPE" == "True" || "$ENFORCE_SCOPE" == "True" ]] && return 0
+    return 1
+}
+
+function is_ironic_sharded {
+    # todo(JayF): Support >1 shard with multiple n-cpu instances for each
+    is_service_enabled ironic && [[ "$IRONIC_SHARDS" == "1" ]] && return 0
     return 1
 }
 
@@ -1520,6 +1531,7 @@ function write_user_unit_file {
     mkdir -p $SYSTEMD_DIR
 
     iniset -sudo $unitfile "Unit" "Description" "Devstack $service"
+    iniset -sudo $unitfile "Service" "Environment" "\"PATH=$PATH\""
     iniset -sudo $unitfile "Service" "User" "$user"
     iniset -sudo $unitfile "Service" "ExecStart" "$command"
     iniset -sudo $unitfile "Service" "KillMode" "process"
@@ -1547,6 +1559,7 @@ function write_uwsgi_user_unit_file {
     mkdir -p $SYSTEMD_DIR
 
     iniset -sudo $unitfile "Unit" "Description" "Devstack $service"
+    iniset -sudo $unitfile "Service" "Environment" "\"PATH=$PATH\""
     iniset -sudo $unitfile "Service" "SyslogIdentifier" "$service"
     iniset -sudo $unitfile "Service" "User" "$user"
     iniset -sudo $unitfile "Service" "ExecStart" "$command"
@@ -1612,6 +1625,9 @@ function _run_under_systemd {
     fi
     local env_vars="$5"
     if [[ "$command" =~ "uwsgi" ]] ; then
+        if [[ "$GLOBAL_VENV" == "True" ]] ; then
+            cmd="$cmd --venv $DEVSTACK_VENV"
+        fi
         write_uwsgi_user_unit_file $systemd_service "$cmd" "$group" "$user" "$env_vars"
     else
         write_user_unit_file $systemd_service "$cmd" "$group" "$user" "$env_vars"
@@ -2502,6 +2518,11 @@ function clean_pyc_files {
 function is_fips_enabled {
     fips=`cat /proc/sys/crypto/fips_enabled`
     [ "$fips" == "1" ]
+}
+
+function remove_token_cache {
+    # Remove Keyring cache file
+    rm ~/.local/share/python_keyring/keyring_pass.cfg
 }
 
 # Restore xtrace

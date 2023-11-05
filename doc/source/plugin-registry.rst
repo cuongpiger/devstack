@@ -69,8 +69,6 @@ openstack/networking-bagpipe             `https://opendev.org/openstack/networki
 openstack/networking-baremetal           `https://opendev.org/openstack/networking-baremetal <https://opendev.org/openstack/networking-baremetal>`__
 openstack/networking-bgpvpn              `https://opendev.org/openstack/networking-bgpvpn <https://opendev.org/openstack/networking-bgpvpn>`__
 openstack/networking-generic-switch      `https://opendev.org/openstack/networking-generic-switch <https://opendev.org/openstack/networking-generic-switch>`__
-openstack/networking-hyperv              `https://opendev.org/openstack/networking-hyperv <https://opendev.org/openstack/networking-hyperv>`__
-openstack/networking-odl                 `https://opendev.org/openstack/networking-odl <https://opendev.org/openstack/networking-odl>`__
 openstack/networking-powervm             `https://opendev.org/openstack/networking-powervm <https://opendev.org/openstack/networking-powervm>`__
 openstack/networking-sfc                 `https://opendev.org/openstack/networking-sfc <https://opendev.org/openstack/networking-sfc>`__
 openstack/neutron                        `https://opendev.org/openstack/neutron <https://opendev.org/openstack/neutron>`__
@@ -80,13 +78,13 @@ openstack/neutron-fwaas-dashboard        `https://opendev.org/openstack/neutron-
 openstack/neutron-tempest-plugin         `https://opendev.org/openstack/neutron-tempest-plugin <https://opendev.org/openstack/neutron-tempest-plugin>`__
 openstack/neutron-vpnaas                 `https://opendev.org/openstack/neutron-vpnaas <https://opendev.org/openstack/neutron-vpnaas>`__
 openstack/neutron-vpnaas-dashboard       `https://opendev.org/openstack/neutron-vpnaas-dashboard <https://opendev.org/openstack/neutron-vpnaas-dashboard>`__
+openstack/nova                           `https://opendev.org/openstack/nova <https://opendev.org/openstack/nova>`__
 openstack/nova-powervm                   `https://opendev.org/openstack/nova-powervm <https://opendev.org/openstack/nova-powervm>`__
 openstack/octavia                        `https://opendev.org/openstack/octavia <https://opendev.org/openstack/octavia>`__
 openstack/octavia-dashboard              `https://opendev.org/openstack/octavia-dashboard <https://opendev.org/openstack/octavia-dashboard>`__
 openstack/octavia-tempest-plugin         `https://opendev.org/openstack/octavia-tempest-plugin <https://opendev.org/openstack/octavia-tempest-plugin>`__
 openstack/openstacksdk                   `https://opendev.org/openstack/openstacksdk <https://opendev.org/openstack/openstacksdk>`__
 openstack/osprofiler                     `https://opendev.org/openstack/osprofiler <https://opendev.org/openstack/osprofiler>`__
-openstack/oswin-tempest-plugin           `https://opendev.org/openstack/oswin-tempest-plugin <https://opendev.org/openstack/oswin-tempest-plugin>`__
 openstack/ovn-octavia-provider           `https://opendev.org/openstack/ovn-octavia-provider <https://opendev.org/openstack/ovn-octavia-provider>`__
 openstack/rally-openstack                `https://opendev.org/openstack/rally-openstack <https://opendev.org/openstack/rally-openstack>`__
 openstack/sahara                         `https://opendev.org/openstack/sahara <https://opendev.org/openstack/sahara>`__

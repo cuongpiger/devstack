@@ -92,8 +92,9 @@ NEUTRON_UWSGI_CONF=$NEUTRON_CONF_DIR/neutron-api-uwsgi.ini
 
 # If NEUTRON_ENFORCE_SCOPE == True, it will set "enforce_scope"
 # and "enforce_new_defaults" to True in the Neutron's config to enforce usage
-# of the new RBAC policies and scopes.
-NEUTRON_ENFORCE_SCOPE=$(trueorfalse False NEUTRON_ENFORCE_SCOPE)
+# of the new RBAC policies and scopes. Set it to False if you do not
+# want to run Neutron with new RBAC.
+NEUTRON_ENFORCE_SCOPE=$(trueorfalse True NEUTRON_ENFORCE_SCOPE)
 
 # Agent binaries.  Note, binary paths for other agents are set in per-service
 # scripts in lib/neutron_plugins/services/
@@ -302,6 +303,11 @@ if has_neutron_plugin_security_group; then
 else
     Q_USE_SECGROUP=False
 fi
+
+# OVN_BRIDGE_MAPPINGS - ovn-bridge-mappings
+# NOTE(hjensas): Initialize after sourcing neutron_plugins/services/l3
+# which initialize PUBLIC_BRIDGE.
+OVN_BRIDGE_MAPPINGS=${OVN_BRIDGE_MAPPINGS:-$PHYSICAL_NETWORK:$PUBLIC_BRIDGE}
 
 # Save trace setting
 _XTRACE_NEUTRON=$(set +o | grep xtrace)
@@ -570,8 +576,15 @@ function configure_rbac_policies {
 # Start running OVN processes
 function start_ovn_services {
     if [[ $Q_AGENT == "ovn" ]]; then
-        init_ovn
-        start_ovn
+        if [ "$VIRT_DRIVER" != 'ironic' ]; then
+            # NOTE(TheJulia): Ironic's devstack plugin needs to perform
+            # additional networking configuration to setup a working test
+            # environment with test virtual machines to emulate baremetal,
+            # which requires OVN to be up and running earlier to complete
+            # that base configuration.
+            init_ovn
+            start_ovn
+        fi
         if [[ "$OVN_L3_CREATE_PUBLIC_NETWORK" == "True" ]]; then
             if [[ "$NEUTRON_CREATE_INITIAL_NETWORKS" != "True" ]]; then
                 echo "OVN_L3_CREATE_PUBLIC_NETWORK=True is being ignored "
@@ -1075,7 +1088,10 @@ function _neutron_setup_rootwrap {
         sudo install -o root -g root -m 644 $NEUTRON_DIR/etc/rootwrap.conf $Q_RR_CONF_FILE
     fi
     sudo sed -e "s:^filters_path=.*$:filters_path=$Q_CONF_ROOTWRAP_D:" -i $Q_RR_CONF_FILE
-    sudo sed -e 's:^exec_dirs=\(.*\)$:exec_dirs=\1,/usr/local/bin:' -i $Q_RR_CONF_FILE
+    # Rely on $PATH set by devstack to determine what is safe to execute
+    # by rootwrap rather than use explicit whitelist of paths in
+    # rootwrap.conf
+    sudo sed -e 's/^exec_dirs=.*/#&/' -i $Q_RR_CONF_FILE
 
     # Specify ``rootwrap.conf`` as first parameter to neutron-rootwrap
     ROOTWRAP_SUDOER_CMD="$NEUTRON_ROOTWRAP $Q_RR_CONF_FILE *"
@@ -1111,24 +1127,6 @@ function _neutron_setup_interface_driver {
 }
 # Functions for Neutron Exercises
 #--------------------------------
-
-function delete_probe {
-    local from_net="$1"
-    net_id=`_get_net_id $from_net`
-    probe_id=`neutron-debug --os-tenant-name admin --os-username admin --os-password $ADMIN_PASSWORD probe-list -c id -c network_id | grep $net_id | awk '{print $2}'`
-    neutron-debug --os-tenant-name admin --os-username admin probe-delete $probe_id
-}
-
-function _get_net_id {
-    openstack --os-cloud devstack-admin --os-region-name="$REGION_NAME" --os-project-name admin --os-username admin --os-password $ADMIN_PASSWORD network list | grep $1 | awk '{print $2}'
-}
-
-function _get_probe_cmd_prefix {
-    local from_net="$1"
-    net_id=`_get_net_id $from_net`
-    probe_id=`neutron-debug --os-tenant-name admin --os-username admin --os-password $ADMIN_PASSWORD probe-list -c id -c network_id | grep $net_id | awk '{print $2}' | head -n 1`
-    echo "$Q_RR_COMMAND ip netns exec qprobe-$probe_id"
-}
 
 # ssh check
 function _ssh_check_neutron {

@@ -183,6 +183,23 @@ IDENTITY_API_VERSION=3
 # each services ${SERVICE}_ENFORCE_SCOPE variables
 ENFORCE_SCOPE=$(trueorfalse False ENFORCE_SCOPE)
 
+# Devstack supports the use of a global virtualenv. These variables enable
+# and disable this functionality as well as set the path to the virtualenv.
+# Note that the DATA_DIR is selected because grenade testing uses a shared
+# DATA_DIR but different DEST dirs and we don't want two sets of venvs,
+# instead we want one global set.
+DEVSTACK_VENV=${DEVSTACK_VENV:-$DATA_DIR/venv}
+
+# NOTE(kopecmartin): remove this once this is fixed
+# https://bugs.launchpad.net/devstack/+bug/2031639
+# This couldn't go to fixup_stuff as that's called after projects
+# (e.g. certain paths) are set taking GLOBAL_VENV into account
+if [[ "$os_VENDOR" =~ (CentOSStream|Rocky) ]]; then
+    GLOBAL_VENV=$(trueorfalse False GLOBAL_VENV)
+else
+    GLOBAL_VENV=$(trueorfalse True GLOBAL_VENV)
+fi
+
 # Enable use of Python virtual environments.  Individual project use of
 # venvs are controlled by the PROJECT_VENV array; every project with
 # an entry in the array will be installed into the named venv.
@@ -204,7 +221,7 @@ MYSQL_GATHER_PERFORMANCE=$(trueorfalse True MYSQL_GATHER_PERFORMANCE)
 # This can be used to reduce the amount of memory mysqld uses while running.
 # These are unscientifically determined, and could reduce performance or
 # cause other issues.
-MYSQL_REDUCE_MEMORY=$(trueorfalse False MYSQL_REDUCE_MEMORY)
+MYSQL_REDUCE_MEMORY=$(trueorfalse True MYSQL_REDUCE_MEMORY)
 
 # Set a timeout for git operations.  If git is still running when the
 # timeout expires, the command will be retried up to 3 times.  This is
@@ -248,7 +265,7 @@ REQUIREMENTS_DIR=${REQUIREMENTS_DIR:-$DEST/requirements}
 # Setting the variable to 'ALL' will activate the download for all
 # libraries.
 
-DEVSTACK_SERIES="2023.2"
+DEVSTACK_SERIES="2024.1"
 
 ##############
 #
@@ -662,20 +679,19 @@ esac
 #     If the file ends in .tar.gz, uncompress the tarball and and select the first
 #     .img file inside it as the image.  If present, use "*-vmlinuz*" as the kernel
 #     and "*-initrd*" as the ramdisk
-#     example: http://cloud-images.ubuntu.com/releases/precise/release/ubuntu-12.04-server-cloudimg-amd64.tar.gz
+#     example: https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.tar.gz
 #  * disk image (*.img,*.img.gz)
 #    if file ends in .img, then it will be uploaded and registered as a to
 #    glance as a disk image.  If it ends in .gz, it is uncompressed first.
 #    example:
-#      http://cloud-images.ubuntu.com/releases/precise/release/ubuntu-12.04-server-cloudimg-armel-disk1.img
-#      http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-rootfs.img.gz
+#      https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
+#      https://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-rootfs.img.gz
 #  * OpenVZ image:
 #    OpenVZ uses its own format of image, and does not support UEC style images
 
-#IMAGE_URLS="http://smoser.brickies.net/ubuntu/ttylinux-uec/ttylinux-uec-amd64-11.2_2.6.35-15_1.tar.gz" # old ttylinux-uec image
-#IMAGE_URLS="http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-disk.img" # cirros full disk image
+#IMAGE_URLS="https://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-disk.img" # cirros full disk image
 
-CIRROS_VERSION=${CIRROS_VERSION:-"0.5.2"}
+CIRROS_VERSION=${CIRROS_VERSION:-"0.6.2"}
 CIRROS_ARCH=${CIRROS_ARCH:-$(uname -m)}
 
 # Set default image based on ``VIRT_DRIVER`` and ``LIBVIRT_TYPE``, either of
@@ -692,11 +708,11 @@ if [[ "$DOWNLOAD_DEFAULT_IMAGES" == "True" ]]; then
                 lxc) # the cirros root disk in the uec tarball is empty, so it will not work for lxc
                     DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-rootfs}
                     DEFAULT_IMAGE_FILE_NAME=${DEFAULT_IMAGE_FILE_NAME:-cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-rootfs.img.gz}
-                    IMAGE_URLS+="http://download.cirros-cloud.net/${CIRROS_VERSION}/${DEFAULT_IMAGE_FILE_NAME}";;
+                    IMAGE_URLS+="https://download.cirros-cloud.net/${CIRROS_VERSION}/${DEFAULT_IMAGE_FILE_NAME}";;
                 *) # otherwise, use the qcow image
                     DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-disk}
                     DEFAULT_IMAGE_FILE_NAME=${DEFAULT_IMAGE_FILE_NAME:-cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-disk.img}
-                    IMAGE_URLS+="http://download.cirros-cloud.net/${CIRROS_VERSION}/${DEFAULT_IMAGE_FILE_NAME}";;
+                    IMAGE_URLS+="https://download.cirros-cloud.net/${CIRROS_VERSION}/${DEFAULT_IMAGE_FILE_NAME}";;
                 esac
             ;;
         vsphere)
@@ -721,11 +737,11 @@ fi
 EXTRA_CACHE_URLS=""
 
 # etcd3 defaults
-ETCD_VERSION=${ETCD_VERSION:-v3.3.12}
-ETCD_SHA256_AMD64=${ETCD_SHA256_AMD64:-"dc5d82df095dae0a2970e4d870b6929590689dd707ae3d33e7b86da0f7f211b6"}
-ETCD_SHA256_ARM64=${ETCD_SHA256_ARM64:-"170b848ac1a071fe7d495d404a868a2c0090750b2944f8a260ef1c6125b2b4f4"}
-ETCD_SHA256_PPC64=${ETCD_SHA256_PPC64:-"77f807b1b51abbf51e020bb05bdb8ce088cb58260fcd22749ea32eee710463d3"}
-# etcd v3.2.x doesn't have anything for s390x
+ETCD_VERSION=${ETCD_VERSION:-v3.4.27}
+ETCD_SHA256_AMD64=${ETCD_SHA256_AMD64:-"a32d21e006252dbc3405b0645ba8468021ed41376974b573285927bf39b39eb9"}
+ETCD_SHA256_ARM64=${ETCD_SHA256_ARM64:-"ed7e257c225b9b9545fac22246b97f4074a4b5109676e92dbaebfb9315b69cc0"}
+ETCD_SHA256_PPC64=${ETCD_SHA256_PPC64:-"eb8825e0bc2cbaf9e55947f5ee373ebc9ca43b6a2ea5ced3b992c81855fff37e"}
+# etcd v3.2.x and later doesn't have anything for s390x
 ETCD_SHA256_S390X=${ETCD_SHA256_S390X:-""}
 # Make sure etcd3 downloads the correct architecture
 if is_arch "x86_64"; then
@@ -805,7 +821,7 @@ NOVA_READY_TIMEOUT=${NOVA_READY_TIMEOUT:-$SERVICE_TIMEOUT}
 SERVICE_GRACEFUL_SHUTDOWN_TIMEOUT=${SERVICE_GRACEFUL_SHUTDOWN_TIMEOUT:-5}
 
 # Service graceful shutdown timeout
-WORKER_TIMEOUT=${WORKER_TIMEOUT:-90}
+WORKER_TIMEOUT=${WORKER_TIMEOUT:-80}
 
 # Common Configuration
 # --------------------

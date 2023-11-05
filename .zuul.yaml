@@ -79,10 +79,10 @@
           - controller
 
 - nodeset:
-    name: devstack-single-node-fedora-latest
+    name: devstack-single-node-debian-bookworm
     nodes:
       - name: controller
-        label: fedora-36
+        label: debian-bookworm
     groups:
       - name: tempest
         nodes:
@@ -430,6 +430,7 @@
         /var/log/mysql: logs
         /var/log/libvirt: logs
         /etc/libvirt: logs
+        /etc/lvm: logs
         /etc/sudoers: logs
         /etc/sudoers.d: logs
         '{{ stage_dir }}/iptables.txt': logs
@@ -696,9 +697,6 @@
     description: |
       Simple multinode test to verify multinode functionality on devstack side.
       This is not meant to be used as a parent job.
-    vars:
-      devstack_localrc:
-        MYSQL_REDUCE_MEMORY: true
 
 # NOTE(ianw) Platform tests have traditionally been non-voting because
 # we often have to rush things through devstack to stabilise the gate,
@@ -710,9 +708,16 @@
     description: CentOS 9 Stream platform test
     nodeset: devstack-single-node-centos-9-stream
     timeout: 9000
-    # TODO(kopecmartin) n-v until the following is resolved:
-    # https://bugs.launchpad.net/neutron/+bug/1979047
     voting: false
+
+- job:
+    name: devstack-platform-debian-bookworm
+    parent: tempest-full-py3
+    description: Debian Bookworm platform test
+    nodeset: devstack-single-node-debian-bookworm
+    timeout: 9000
+    vars:
+      configure_swap_size: 4096
 
 - job:
     name: devstack-platform-debian-bullseye
@@ -731,13 +736,6 @@
     timeout: 9000
     vars:
       configure_swap_size: 4096
-
-- job:
-    name: devstack-platform-ubuntu-focal
-    parent: tempest-full-py3
-    description: Ubuntu 20.04 LTS (focal) platform test
-    nodeset: openstack-single-node-focal
-    timeout: 9000
 
 - job:
     name: devstack-platform-ubuntu-jammy-ovn-source
@@ -858,23 +856,6 @@
         tls-proxy: false
 
 - job:
-    name: devstack-platform-fedora-latest
-    parent: tempest-full-py3
-    description: Fedora latest platform test
-    nodeset: devstack-single-node-fedora-latest
-    voting: false
-
-- job:
-    name: devstack-platform-fedora-latest-virt-preview
-    parent: tempest-full-py3
-    description: Fedora latest platform test using the virt-preview repo.
-    nodeset: devstack-single-node-fedora-latest
-    voting: false
-    vars:
-      devstack_localrc:
-        ENABLE_FEDORA_VIRT_PREVIEW_REPO: true
-
-- job:
     name: devstack-tox-base
     parent: devstack
     description: |
@@ -947,15 +928,12 @@
         - devstack
         - devstack-ipv6
         - devstack-enforce-scope
-        - devstack-platform-fedora-latest
         - devstack-platform-centos-9-stream
+        - devstack-platform-debian-bookworm
         - devstack-platform-debian-bullseye
         - devstack-platform-rocky-blue-onyx
-        - devstack-platform-ubuntu-focal
         - devstack-platform-ubuntu-jammy-ovn-source
         - devstack-platform-ubuntu-jammy-ovs
-        - devstack-platform-openEuler-22.03-ovn-source
-        - devstack-platform-openEuler-22.03-ovs
         - devstack-multinode
         - devstack-unit-tests
         - openstack-tox-bashate
@@ -966,10 +944,6 @@
               - ^.*\.rst$
               - ^doc/.*$
         - neutron-ovs-grenade-multinode:
-            irrelevant-files:
-              - ^.*\.rst$
-              - ^doc/.*$
-        - neutron-linuxbridge-tempest:
             irrelevant-files:
               - ^.*\.rst$
               - ^doc/.*$
@@ -999,20 +973,14 @@
       jobs:
         - devstack
         - devstack-ipv6
-        # TODO(kopecmartin) n-v until the following is resolved:
-        # https://bugs.launchpad.net/neutron/+bug/1979047
-        # - devstack-platform-centos-9-stream
+        - devstack-platform-debian-bookworm
         - devstack-platform-debian-bullseye
-        - devstack-platform-ubuntu-focal
+        - devstack-platform-rocky-blue-onyx
         - devstack-enforce-scope
         - devstack-multinode
         - devstack-unit-tests
         - openstack-tox-bashate
         - neutron-ovs-grenade-multinode:
-            irrelevant-files:
-              - ^.*\.rst$
-              - ^doc/.*$
-        - neutron-linuxbridge-tempest:
             irrelevant-files:
               - ^.*\.rst$
               - ^doc/.*$
@@ -1051,10 +1019,6 @@
     #    Next cycle we can remove this if everything run out stable enough.
     # * nova-multi-cell: maintained by nova and currently non-voting in the
     #    check queue for nova changes but relies on devstack configuration
-    # * devstack-platform-fedora-latest-virt-preview: Maintained by lyarwood
-    #    for Nova to allow early testing of the latest versions of Libvirt and
-    #    QEMU. Should only graduate out of experimental if it ever moves into
-    #    the check queue for Nova.
 
     experimental:
       jobs:
@@ -1083,12 +1047,7 @@
             irrelevant-files:
               - ^.*\.rst$
               - ^doc/.*$
-        - devstack-platform-fedora-latest-virt-preview
         - devstack-no-tls-proxy
     periodic:
       jobs:
         - devstack-no-tls-proxy
-    periodic-weekly:
-      jobs:
-        - devstack-platform-openEuler-22.03-ovn-source
-        - devstack-platform-openEuler-22.03-ovs

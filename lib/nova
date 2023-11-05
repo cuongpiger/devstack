@@ -58,6 +58,14 @@ NOVA_METADATA_UWSGI=$NOVA_BIN_DIR/nova-metadata-wsgi
 NOVA_UWSGI_CONF=$NOVA_CONF_DIR/nova-api-uwsgi.ini
 NOVA_METADATA_UWSGI_CONF=$NOVA_CONF_DIR/nova-metadata-uwsgi.ini
 
+# Allow forcing the stable compute uuid to something specific. This would be
+# done by deployment tools that pre-allocate the UUIDs, but it is also handy
+# for developers that need to re-stack a compute-only deployment multiple
+# times. Since the DB is non-local and not erased on an unstack, making it
+# stay the same each time is what developers want. Set to a uuid here or
+# leave it blank for default allocate-on-start behavior.
+NOVA_CPU_UUID=""
+
 # The total number of cells we expect. Must be greater than one and doesn't
 # count cell0.
 NOVA_NUM_CELLS=${NOVA_NUM_CELLS:-1}
@@ -74,6 +82,11 @@ NOVA_API_PASTE_INI=${NOVA_API_PASTE_INI:-$NOVA_CONF_DIR/api-paste.ini}
 # after pike, at which time we can stop using NOVA_USE_MOD_WSGI to
 # mean "use uwsgi" because we'll be always using uwsgi.
 NOVA_USE_MOD_WSGI=${NOVA_USE_MOD_WSGI:-True}
+
+# We do not need to report service status every 10s for devstack-like
+# deployments. In the gate this generates extra work for the services and the
+# database which are already taxed.
+NOVA_SERVICE_REPORT_INTERVAL=${NOVA_SERVICE_REPORT_INTERVAL:-120}
 
 if is_service_enabled tls-proxy; then
     NOVA_SERVICE_PROTOCOL="https"
@@ -98,10 +111,10 @@ METADATA_SERVICE_PORT=${METADATA_SERVICE_PORT:-8775}
 NOVA_ENABLE_CACHE=${NOVA_ENABLE_CACHE:-True}
 
 # Flag to set the oslo_policy.enforce_scope and oslo_policy.enforce_new_defaults.
-# This is used to switch the compute API policies enable the scope and new defaults.
-# By Default, these flag are False.
+# This is used to disable the compute API policies scope and new defaults.
+# By Default, it is True.
 # For more detail: https://docs.openstack.org/oslo.policy/latest/configuration/index.html#oslo_policy.enforce_scope
-NOVA_ENFORCE_SCOPE=$(trueorfalse False NOVA_ENFORCE_SCOPE)
+NOVA_ENFORCE_SCOPE=$(trueorfalse True NOVA_ENFORCE_SCOPE)
 
 if [[ $SERVICE_IP_VERSION == 6 ]]; then
     NOVA_MY_IP="$HOST_IPV6"
@@ -115,7 +128,7 @@ FORCE_CONFIG_DRIVE=${FORCE_CONFIG_DRIVE:-"False"}
 
 # The following NOVA_FILTERS contains SameHostFilter and DifferentHostFilter with
 # the default filters.
-NOVA_FILTERS="AvailabilityZoneFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter,SameHostFilter,DifferentHostFilter"
+NOVA_FILTERS="ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter,SameHostFilter,DifferentHostFilter"
 
 QEMU_CONF=/etc/libvirt/qemu.conf
 
@@ -447,6 +460,9 @@ function create_nova_conf {
     iniset $NOVA_CONF DEFAULT shutdown_timeout $NOVA_SHUTDOWN_TIMEOUT
 
     iniset $NOVA_CONF key_manager backend nova.keymgr.conf_key_mgr.ConfKeyManager
+
+    iniset $NOVA_CONF DEFAULT report_interval $NOVA_SERVICE_REPORT_INTERVAL
+    iniset $NOVA_CONF DEFAULT service_down_time $(($NOVA_SERVICE_REPORT_INTERVAL * 6))
 
     if is_fedora; then
         # nova defaults to /usr/local/bin, but fedora pip like to
@@ -1036,6 +1052,10 @@ function start_nova_compute {
     # by the compute process.
     configure_console_compute
 
+    # Set rebuild timeout longer for BFV instances because we likely have
+    # slower disk than expected. Default is 20s/GB
+    iniset $NOVA_CPU_CONF DEFAULT reimage_timeout_per_gb 60
+
     # Configure the OVSDB connection for os-vif
     if [ -n "$OVSDB_SERVER_LOCAL_HOST" ]; then
         iniset $NOVA_CPU_CONF os_vif_ovs ovsdb_connection "tcp:$OVSDB_SERVER_LOCAL_HOST:6640"
@@ -1044,6 +1064,10 @@ function start_nova_compute {
     # Workaround bug #1939108
     if [[ "$VIRT_DRIVER" == "libvirt" && "$LIBVIRT_TYPE" == "qemu" ]]; then
         iniset $NOVA_CPU_CONF workarounds libvirt_disable_apic True
+    fi
+
+    if [[ "$NOVA_CPU_UUID" ]]; then
+        echo -n $NOVA_CPU_UUID > $NOVA_CONF_DIR/compute_id
     fi
 
     if [[ "$VIRT_DRIVER" = 'libvirt' ]]; then

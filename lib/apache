@@ -137,6 +137,8 @@ function install_apache_wsgi {
     elif is_fedora; then
         sudo rm -f /etc/httpd/conf.d/000-*
         install_package httpd python3-mod_wsgi
+        # rpm distros dont enable httpd by default so enable it to support reboots.
+        sudo systemctl enable httpd
         # For consistency with Ubuntu, switch to the worker mpm, as
         # the default is event
         sudo sed -i '/mod_mpm_prefork.so/s/^/#/g' /etc/httpd/conf.modules.d/00-mpm.conf
@@ -288,7 +290,7 @@ function write_uwsgi_config {
         apache_conf=$(apache_site_config_for $name)
         iniset "$file" uwsgi socket "$socket"
         iniset "$file" uwsgi chmod-socket 666
-        echo "ProxyPass \"${url}\" \"unix:${socket}|uwsgi://uwsgi-uds-${name}\" retry=0 " | sudo tee -a $apache_conf
+        echo "ProxyPass \"${url}\" \"unix:${socket}|uwsgi://uwsgi-uds-${name}\" retry=0 acquire=1 " | sudo tee -a $apache_conf
         enable_apache_site $name
         restart_apache_server
     fi
@@ -349,7 +351,7 @@ function write_local_uwsgi_http_config {
     apache_conf=$(apache_site_config_for $name)
     echo "KeepAlive Off" | sudo tee $apache_conf
     echo "SetEnv proxy-sendchunked 1" | sudo tee -a $apache_conf
-    echo "ProxyPass \"${url}\" \"http://$APACHE_LOCAL_HOST:$port\" retry=0 " | sudo tee -a $apache_conf
+    echo "ProxyPass \"${url}\" \"http://$APACHE_LOCAL_HOST:$port\" retry=0 acquire=1 " | sudo tee -a $apache_conf
     enable_apache_site $name
     restart_apache_server
 }
@@ -368,7 +370,7 @@ function write_local_proxy_http_config {
 
     echo "KeepAlive Off" | sudo tee $apache_conf
     echo "SetEnv proxy-sendchunked 1" | sudo tee -a $apache_conf
-    echo "ProxyPass \"${loc}\" \"$url\" retry=0 " | sudo tee -a $apache_conf
+    echo "ProxyPass \"${loc}\" \"$url\" retry=0 acquire=1 " | sudo tee -a $apache_conf
     enable_apache_site $name
     restart_apache_server
 }
